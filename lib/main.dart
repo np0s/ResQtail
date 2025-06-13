@@ -1,13 +1,28 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'services/auth_service.dart';
+import 'services/email_service.dart';
+import 'services/config_service.dart';
 import 'screens/login_screen.dart';
 import 'screens/register_screen.dart';
+import 'screens/verification_screen.dart';
 
-void main() {
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await ConfigService.init();
+  
   runApp(
     ChangeNotifierProvider(
-      create: (_) => AuthService(),
+      create: (_) => AuthService(
+        emailService: EmailService(
+          smtpServer: ConfigService.smtpServer,
+          smtpPort: ConfigService.smtpPort,
+          username: ConfigService.smtpUsername,
+          password: ConfigService.smtpPassword,
+          fromEmail: ConfigService.smtpFromEmail,
+          fromName: ConfigService.smtpFromName,
+        ),
+      ),
       child: const MyApp(),
     ),
   );
@@ -49,7 +64,13 @@ class MyApp extends StatelessWidget {
           ),
         ),
       ),
-      home: const AuthWrapper(),
+      initialRoute: '/',
+      routes: {
+        '/': (context) => const AuthWrapper(),
+        '/login': (context) => const LoginScreen(),
+        '/register': (context) => const RegisterScreen(),
+        '/verify': (context) => const VerificationScreen(),
+      },
     );
   }
 }
