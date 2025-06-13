@@ -61,6 +61,8 @@ class _RegisterScreenState extends State<RegisterScreen> with SingleTickerProvid
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Registration failed. Please try again.')),
         );
+      } else if (mounted) {
+        Navigator.pushReplacementNamed(context, '/verify');
       }
     } finally {
       if (mounted) {
