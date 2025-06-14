@@ -6,6 +6,7 @@ import 'services/config_service.dart';
 import 'screens/login_screen.dart';
 import 'screens/register_screen.dart';
 import 'screens/verification_screen.dart';
+import 'screens/home_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -96,7 +97,7 @@ class _AuthWrapperState extends State<AuthWrapper> {
     return Consumer<AuthService>(
       builder: (context, authService, _) {
         if (authService.isLoggedIn) {
-          return const MyHomePage(title: 'ResqTail');
+          return const HomeScreen();
         }
         return const LoginScreen();
       },
