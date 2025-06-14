@@ -10,7 +10,7 @@ import 'screens/verification_screen.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await ConfigService.init();
-  
+
   runApp(
     ChangeNotifierProvider(
       create: (_) => AuthService(
@@ -49,7 +49,8 @@ class MyApp extends StatelessWidget {
         inputDecorationTheme: InputDecorationTheme(
           filled: true,
           fillColor: Colors.grey[50],
-          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+          contentPadding:
+              const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
         ),
         elevatedButtonTheme: ElevatedButtonThemeData(
           style: ElevatedButton.styleFrom(
@@ -115,6 +116,9 @@ class MyHomePage extends StatefulWidget {
 class _MyHomePageState extends State<MyHomePage> {
   @override
   Widget build(BuildContext context) {
+    final authService = context.watch<AuthService>();
+    final userEmail = authService.email ?? '';
+
     return Scaffold(
       appBar: AppBar(
         backgroundColor: Theme.of(context).colorScheme.inversePrimary,
@@ -128,8 +132,14 @@ class _MyHomePageState extends State<MyHomePage> {
           ),
         ],
       ),
-      body: const Center(
-        child: Text('Welcome to ResqTail!'),
+      body: Center(
+        child: Text(
+          'Welcome ${userEmail.split('@')[0]}!',
+          style: const TextStyle(
+            fontSize: 24,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
       ),
     );
   }

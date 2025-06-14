@@ -3,6 +3,8 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:crypto/crypto.dart';
 import 'dart:convert';
 import 'package:uuid/uuid.dart';
+import 'dart:io';
+import 'package:path_provider/path_provider.dart';
 import 'email_service.dart';
 
 class AuthService extends ChangeNotifier {
@@ -13,15 +15,45 @@ class AuthService extends ChangeNotifier {
   String? _verificationCode;
   DateTime? _verificationCodeExpiry;
   final EmailService _emailService;
+  static const String _usersFileName = 'users.json';
 
   AuthService({
     required EmailService emailService,
-  }) : _emailService = emailService;
+  }) : _emailService = emailService {
+    _loadUsers();
+  }
 
   bool get isLoggedIn => _isLoggedIn;
   String? get userId => _userId;
   String? get email => _email;
   bool get isEmailVerified => _isEmailVerified;
+
+  Future<String> get _usersFilePath async {
+    final directory = await getApplicationDocumentsDirectory();
+    return '${directory.path}/$_usersFileName';
+  }
+
+  Future<Map<String, dynamic>> _loadUsers() async {
+    try {
+      final file = File(await _usersFilePath);
+      if (await file.exists()) {
+        final contents = await file.readAsString();
+        return json.decode(contents);
+      }
+    } catch (e) {
+      print('Error loading users: $e');
+    }
+    return {};
+  }
+
+  Future<void> _saveUsers(Map<String, dynamic> users) async {
+    try {
+      final file = File(await _usersFilePath);
+      await file.writeAsString(json.encode(users));
+    } catch (e) {
+      print('Error saving users: $e');
+    }
+  }
 
   Future<void> checkLoginStatus() async {
     final prefs = await SharedPreferences.getInstance();
@@ -44,6 +76,13 @@ class AuthService extends ChangeNotifier {
 
   Future<bool> register(String email, String password) async {
     try {
+      // Check if user already exists
+      final users = await _loadUsers();
+      if (users.containsKey(email)) {
+        print('User already exists');
+        return false;
+      }
+
       // Generate verification code
       _verificationCode = _generateVerificationCode();
       _verificationCodeExpiry = DateTime.now().add(const Duration(hours: 24));
@@ -55,20 +94,33 @@ class AuthService extends ChangeNotifier {
       );
 
       if (!emailSent) {
+        print('Failed to send verification email');
         return false;
       }
 
       // Store user data
-      final prefs = await SharedPreferences.getInstance();
       final userId = const Uuid().v4();
       final hashedPassword = _hashPassword(password);
 
+      // Save to users file
+      users[email] = {
+        'userId': userId,
+        'password': hashedPassword,
+        'isEmailVerified': false,
+        'verificationCode': _verificationCode,
+        'verificationCodeExpiry': _verificationCodeExpiry!.toIso8601String(),
+      };
+      await _saveUsers(users);
+
+      // Save to local preferences
+      final prefs = await SharedPreferences.getInstance();
       await prefs.setString('userId', userId);
       await prefs.setString('email', email);
       await prefs.setString('password', hashedPassword);
       await prefs.setBool('isEmailVerified', false);
       await prefs.setString('verificationCode', _verificationCode!);
-      await prefs.setString('verificationCodeExpiry', _verificationCodeExpiry!.toIso8601String());
+      await prefs.setString(
+          'verificationCodeExpiry', _verificationCodeExpiry!.toIso8601String());
 
       _userId = userId;
       _email = email;
@@ -83,16 +135,26 @@ class AuthService extends ChangeNotifier {
   }
 
   Future<bool> verifyEmail(String code) async {
-    if (code != _verificationCode) {
-      return false;
-    }
-
-    if (_verificationCodeExpiry == null || 
-        DateTime.now().isAfter(_verificationCodeExpiry!)) {
-      return false;
-    }
-
     try {
+      if (code != _verificationCode) {
+        print('Invalid verification code');
+        return false;
+      }
+
+      if (_verificationCodeExpiry == null ||
+          DateTime.now().isAfter(_verificationCodeExpiry!)) {
+        print('Verification code has expired');
+        return false;
+      }
+
+      // Update users file
+      final users = await _loadUsers();
+      if (users.containsKey(_email)) {
+        users[_email]!['isEmailVerified'] = true;
+        await _saveUsers(users);
+      }
+
+      // Update local preferences
       final prefs = await SharedPreferences.getInstance();
       await prefs.setBool('isEmailVerified', true);
       _isEmailVerified = true;
@@ -106,20 +168,25 @@ class AuthService extends ChangeNotifier {
 
   Future<bool> login(String email, String password) async {
     try {
-      final prefs = await SharedPreferences.getInstance();
-      final storedEmail = prefs.getString('email');
-      final storedPassword = prefs.getString('password');
-      final isVerified = prefs.getBool('isEmailVerified') ?? false;
+      // Check users file first
+      final users = await _loadUsers();
+      final userData = users[email];
 
-      if (storedEmail != email || 
-          storedPassword != _hashPassword(password) ||
-          !isVerified) {
+      if (userData == null ||
+          userData['password'] != _hashPassword(password) ||
+          !userData['isEmailVerified']) {
         return false;
       }
 
+      // Update local preferences
+      final prefs = await SharedPreferences.getInstance();
       await prefs.setBool('isLoggedIn', true);
+      await prefs.setString('userId', userData['userId']);
+      await prefs.setString('email', email);
+      await prefs.setBool('isEmailVerified', true);
+
       _isLoggedIn = true;
-      _userId = prefs.getString('userId');
+      _userId = userData['userId'];
       _email = email;
       _isEmailVerified = true;
       notifyListeners();
@@ -133,10 +200,10 @@ class AuthService extends ChangeNotifier {
   Future<void> logout() async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setBool('isLoggedIn', false);
-    
+
     _isLoggedIn = false;
     _userId = null;
     _email = null;
     notifyListeners();
   }
-} 
+}
