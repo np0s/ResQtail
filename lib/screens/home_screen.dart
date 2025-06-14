@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'dart:io';
 import 'package:image_picker/image_picker.dart';
 import 'map_screen.dart'; // Import the MapScreen
+import 'profile_screen.dart'; // Import the ProfileScreen
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({Key? key}) : super(key: key);
@@ -24,9 +25,7 @@ class _HomeScreenState extends State<HomeScreen>
       builder: (context) => _AddImageScreen(),
     ),
     const MapScreen(), // Replace placeholder with actual MapScreen
-    const Center(
-        child: Text('Profile',
-            style: TextStyle(fontSize: 32, fontWeight: FontWeight.bold))),
+    const ProfileScreen(), // Use the actual ProfileScreen
   ];
 
   final List<Color> _bgColors = [
