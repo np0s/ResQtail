@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'dart:io';
 import 'package:image_picker/image_picker.dart';
+import 'map_screen.dart'; // Import the MapScreen
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({Key? key}) : super(key: key);
@@ -22,9 +23,7 @@ class _HomeScreenState extends State<HomeScreen>
     Builder(
       builder: (context) => _AddImageScreen(),
     ),
-    const Center(
-        child: Text('Map',
-            style: TextStyle(fontSize: 32, fontWeight: FontWeight.bold))),
+    const MapScreen(), // Replace placeholder with actual MapScreen
     const Center(
         child: Text('Profile',
             style: TextStyle(fontSize: 32, fontWeight: FontWeight.bold))),
@@ -209,196 +208,135 @@ class _AddImageScreenState extends State<_AddImageScreen> {
         ),
       ),
       child: SingleChildScrollView(
-        child: Padding(
-          padding: const EdgeInsets.all(16.0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: [
-              const SizedBox(height: 32),
-              // Image Picker
-              AnimatedContainer(
-                duration: const Duration(milliseconds: 500),
-                curve: Curves.easeInOut,
-                width: 220,
-                height: 220,
-                decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.7),
-                  borderRadius: BorderRadius.circular(32),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black12,
-                      blurRadius: 32,
-                      offset: Offset(0, 12),
-                    ),
-                  ],
-                  border: Border.all(
-                    color: Colors.white,
-                    width: 4,
-                  ),
-                ),
-                child: _image == null
-                    ? Center(
-                        child: Icon(
-                          Icons.image_outlined,
-                          color: Colors.grey[400],
-                          size: 80,
-                        ),
-                      )
-                    : ClipRRect(
-                        borderRadius: BorderRadius.circular(28),
-                        child: Image.file(
-                          _image!,
-                          fit: BoxFit.cover,
-                          width: 220,
-                          height: 220,
-                        ),
-                      ),
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              'Add New Post',
+              style: TextStyle(
+                fontSize: 32,
+                fontWeight: FontWeight.bold,
+                color: Colors.white,
               ),
-              const SizedBox(height: 32),
-              // Upload Button
-              FloatingActionButton.extended(
-                onPressed: _pickImage,
-                backgroundColor: const Color(0xFF8EC5FC),
-                icon: const Icon(Icons.upload_rounded, color: Colors.white),
-                label: const Text(
-                  'Upload Image',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontWeight: FontWeight.bold,
-                    fontSize: 18,
+            ),
+            const SizedBox(height: 32),
+            // Image Preview
+            Container(
+              width: double.infinity,
+              height: 200,
+              decoration: BoxDecoration(
+                color: Colors.white.withOpacity(0.2),
+                borderRadius: BorderRadius.circular(16),
+              ),
+              child: _image != null
+                  ? ClipRRect(
+                      borderRadius: BorderRadius.circular(16),
+                      child: Image.file(
+                        _image!,
+                        fit: BoxFit.cover,
+                      ),
+                    )
+                  : Center(
+                      child: IconButton(
+                        icon: const Icon(Icons.add_a_photo,
+                            size: 48, color: Colors.white),
+                        onPressed: _pickImage,
+                      ),
+                    ),
+            ),
+            const SizedBox(height: 32),
+            // Tag Selection
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: _tags.map((tag) {
+                final isSelected = _selectedTags.contains(tag);
+                return FilterChip(
+                  label: Text(tag),
+                  selected: isSelected,
+                  onSelected: (selected) {
+                    setState(() {
+                      if (selected) {
+                        _selectedTags.add(tag);
+                      } else {
+                        _selectedTags.remove(tag);
+                      }
+                    });
+                  },
+                  backgroundColor: Colors.white.withOpacity(0.7),
+                  selectedColor:
+                      Theme.of(context).colorScheme.primary.withOpacity(0.2),
+                  checkmarkColor: Theme.of(context).colorScheme.primary,
+                  labelStyle: TextStyle(
+                    color: isSelected
+                        ? Theme.of(context).colorScheme.primary
+                        : Colors.black,
+                    fontWeight:
+                        isSelected ? FontWeight.bold : FontWeight.normal,
                   ),
-                ),
-                elevation: 8,
+                );
+              }).toList(),
+            ),
+            const SizedBox(height: 32),
+            // Location Picker Button
+            ElevatedButton.icon(
+              onPressed: () {
+                // TODO: Implement location picker
+              },
+              icon: const Icon(Icons.location_on),
+              label: const Text('Pin Location'),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.white.withOpacity(0.7),
+                foregroundColor: Theme.of(context).colorScheme.primary,
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(16),
                 ),
               ),
-              const SizedBox(height: 32),
-              // Animal Type Detection
-              if (_detectedAnimalType != null)
-                Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                  decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.7),
-                    borderRadius: BorderRadius.circular(16),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black12,
-                        blurRadius: 16,
-                        offset: Offset(0, 4),
-                      ),
-                    ],
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(Icons.pets,
-                          color: Theme.of(context).colorScheme.primary),
-                      const SizedBox(width: 8),
-                      Text(
-                        'Detected: $_detectedAnimalType',
-                        style: const TextStyle(
-                          fontWeight: FontWeight.bold,
-                          fontSize: 16,
-                        ),
-                      ),
-                    ],
-                  ),
+            ),
+            const SizedBox(height: 32),
+            // Description Field
+            TextField(
+              controller: _descriptionController,
+              maxLines: 3,
+              decoration: InputDecoration(
+                hintText: 'Add a description...',
+                filled: true,
+                fillColor: Colors.white.withOpacity(0.7),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(16),
+                  borderSide: BorderSide.none,
                 ),
-              const SizedBox(height: 32),
-              // Tag Selection
-              Wrap(
-                spacing: 8,
-                runSpacing: 8,
-                children: _tags.map((tag) {
-                  final isSelected = _selectedTags.contains(tag);
-                  return FilterChip(
-                    label: Text(tag),
-                    selected: isSelected,
-                    onSelected: (selected) {
-                      setState(() {
-                        if (selected) {
-                          _selectedTags.add(tag);
-                        } else {
-                          _selectedTags.remove(tag);
-                        }
-                      });
-                    },
-                    backgroundColor: Colors.white.withOpacity(0.7),
-                    selectedColor:
-                        Theme.of(context).colorScheme.primary.withOpacity(0.2),
-                    checkmarkColor: Theme.of(context).colorScheme.primary,
-                    labelStyle: TextStyle(
-                      color: isSelected
-                          ? Theme.of(context).colorScheme.primary
-                          : Colors.black,
-                      fontWeight:
-                          isSelected ? FontWeight.bold : FontWeight.normal,
-                    ),
-                  );
-                }).toList(),
+                contentPadding: const EdgeInsets.all(16),
               ),
-              const SizedBox(height: 32),
-              // Location Picker Button
-              ElevatedButton.icon(
-                onPressed: () {
-                  // TODO: Implement location picker
-                },
-                icon: const Icon(Icons.location_on),
-                label: const Text('Pin Location'),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.white.withOpacity(0.7),
-                  foregroundColor: Theme.of(context).colorScheme.primary,
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(16),
-                  ),
+            ),
+            const SizedBox(height: 32),
+            // Submit Button
+            ElevatedButton(
+              onPressed: () {
+                // TODO: Implement submit logic
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Theme.of(context).colorScheme.primary,
+                foregroundColor: Colors.white,
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(16),
                 ),
               ),
-              const SizedBox(height: 32),
-              // Description Field
-              TextField(
-                controller: _descriptionController,
-                maxLines: 3,
-                decoration: InputDecoration(
-                  hintText: 'Add a description...',
-                  filled: true,
-                  fillColor: Colors.white.withOpacity(0.7),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(16),
-                    borderSide: BorderSide.none,
-                  ),
-                  contentPadding: const EdgeInsets.all(16),
+              child: const Text(
+                'Submit',
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
                 ),
               ),
-              const SizedBox(height: 32),
-              // Submit Button
-              ElevatedButton(
-                onPressed: () {
-                  // TODO: Implement submit logic
-                },
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Theme.of(context).colorScheme.primary,
-                  foregroundColor: Colors.white,
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(16),
-                  ),
-                ),
-                child: const Text(
-                  'Submit',
-                  style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ),
-              const SizedBox(height: 32),
-            ],
-          ),
+            ),
+            const SizedBox(height: 32),
+          ],
         ),
       ),
     );
