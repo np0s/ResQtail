@@ -1,4 +1,4 @@
-# ResqTail
+# ResQtail
 
 A Flutter application for pet rescue and management.
 
