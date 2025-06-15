@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import 'services/auth_service.dart';
 import 'services/email_service.dart';
 import 'services/config_service.dart';
+import 'services/report_service.dart';
 import 'screens/login_screen.dart';
 import 'screens/register_screen.dart';
 import 'screens/verification_screen.dart';
@@ -13,17 +14,24 @@ void main() async {
   await ConfigService.init();
 
   runApp(
-    ChangeNotifierProvider(
-      create: (_) => AuthService(
-        emailService: EmailService(
-          smtpServer: ConfigService.smtpServer,
-          smtpPort: ConfigService.smtpPort,
-          username: ConfigService.smtpUsername,
-          password: ConfigService.smtpPassword,
-          fromEmail: ConfigService.smtpFromEmail,
-          fromName: ConfigService.smtpFromName,
+    MultiProvider(
+      providers: [
+        ChangeNotifierProvider(
+          create: (_) => AuthService(
+            emailService: EmailService(
+              smtpServer: ConfigService.smtpServer,
+              smtpPort: ConfigService.smtpPort,
+              username: ConfigService.smtpUsername,
+              password: ConfigService.smtpPassword,
+              fromEmail: ConfigService.smtpFromEmail,
+              fromName: ConfigService.smtpFromName,
+            ),
+          ),
         ),
-      ),
+        ChangeNotifierProvider(
+          create: (_) => ReportService(),
+        ),
+      ],
       child: const MyApp(),
     ),
   );

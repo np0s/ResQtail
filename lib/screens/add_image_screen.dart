@@ -4,6 +4,10 @@ import 'package:image_picker/image_picker.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:dotted_border/dotted_border.dart';
+import 'package:provider/provider.dart';
+import 'package:uuid/uuid.dart';
+import '../services/auth_service.dart';
+import '../services/report_service.dart';
 
 class AddImageScreen extends StatefulWidget {
   const AddImageScreen({Key? key}) : super(key: key);
@@ -28,9 +32,10 @@ class _AddImageScreenState extends State<AddImageScreen>
   late AnimationController _animController;
   late Animation<double> _fadeAnim;
   LatLng? _pickedLocation;
-  LatLng _initialMapCenter = const LatLng(28.6139, 77.2090); // Default: New Delhi
+  LatLng? _initialMapCenter;
   double _cameraCardScale = 1.0;
   final List<String> _customTags = [];
+  bool _isLoadingLocation = true;
 
   @override
   void initState() {
@@ -48,16 +53,53 @@ class _AddImageScreenState extends State<AddImageScreen>
 
   Future<void> _setInitialLocation() async {
     try {
-      final pos = await Geolocator.getCurrentPosition();
-      setState(() {
-        _initialMapCenter = LatLng(pos.latitude, pos.longitude);
-        _pickedLocation = _initialMapCenter;
-      });
-    } catch (_) {
-      // Use default location
-      setState(() {
-        _pickedLocation = _initialMapCenter;
-      });
+      // Check location permission
+      LocationPermission permission = await Geolocator.checkPermission();
+      if (permission == LocationPermission.denied) {
+        permission = await Geolocator.requestPermission();
+        if (permission == LocationPermission.denied) {
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text('Location permission denied')),
+            );
+          }
+          return;
+        }
+      }
+
+      if (permission == LocationPermission.deniedForever) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Location permission permanently denied. Please enable in settings.'),
+            ),
+          );
+        }
+        return;
+      }
+
+      // Get current position
+      final position = await Geolocator.getCurrentPosition(
+        desiredAccuracy: LocationAccuracy.high,
+      );
+
+      if (mounted) {
+        setState(() {
+          _initialMapCenter = LatLng(position.latitude, position.longitude);
+          _pickedLocation = _initialMapCenter;
+          _isLoadingLocation = false;
+        });
+      }
+    } catch (e) {
+      debugPrint('Error getting location: $e');
+      if (mounted) {
+        setState(() {
+          _isLoadingLocation = false;
+        });
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Could not get current location')),
+        );
+      }
     }
   }
 
@@ -105,6 +147,80 @@ class _AddImageScreenState extends State<AddImageScreen>
         );
       },
     );
+  }
+
+  Future<void> _submitReport() async {
+    if (_image == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please add an image first')),
+      );
+      return;
+    }
+
+    if (_pickedLocation == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please select a location')),
+      );
+      return;
+    }
+
+    if (_selectedTags.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please select at least one tag')),
+      );
+      return;
+    }
+
+    final authService = context.read<AuthService>();
+    final reportService = context.read<ReportService>();
+    final userId = authService.userId;
+
+    if (userId == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please login to submit a report')),
+      );
+      return;
+    }
+
+    try {
+      // Create a unique ID for the report
+      final reportId = const Uuid().v4();
+
+      // Create the report
+      final report = Report(
+        id: reportId,
+        userId: userId,
+        imagePath: _image!.path,
+        description: _descriptionController.text,
+        tags: _selectedTags,
+        detectedAnimalType: _detectedAnimalType,
+        location: _pickedLocation!,
+        timestamp: DateTime.now(),
+      );
+
+      // Save the report
+      await reportService.addReport(report);
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Report submitted successfully')),
+        );
+        // Clear the form
+        setState(() {
+          _image = null;
+          _selectedTags.clear();
+          _descriptionController.clear();
+          _detectedAnimalType = null;
+          _pickedLocation = _initialMapCenter;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Failed to submit report')),
+        );
+      }
+    }
   }
 
   @override
@@ -225,54 +341,62 @@ class _AddImageScreenState extends State<AddImageScreen>
                       ),
                     ],
                   ),
-                  child: Stack(
-                    children: [
-                      ClipRRect(
-                        borderRadius: BorderRadius.circular(28),
-                        child: GoogleMap(
-                          initialCameraPosition: CameraPosition(
-                            target: _pickedLocation ?? _initialMapCenter,
-                            zoom: 15,
-                          ),
-                          onMapCreated: (controller) {},
-                          onCameraMove: (position) {
-                            setState(() {
-                              _pickedLocation = position.target;
-                            });
-                          },
-                          markers: _pickedLocation == null
-                              ? {}
-                              : {
-                                  Marker(
-                                    markerId: const MarkerId('picked'),
-                                    position: _pickedLocation!,
+                  child: _isLoadingLocation
+                      ? const Center(
+                          child: CircularProgressIndicator(),
+                        )
+                      : _initialMapCenter == null
+                          ? const Center(
+                              child: Text('Could not get location'),
+                            )
+                          : Stack(
+                              children: [
+                                ClipRRect(
+                                  borderRadius: BorderRadius.circular(28),
+                                  child: GoogleMap(
+                                    initialCameraPosition: CameraPosition(
+                                      target: _initialMapCenter!,
+                                      zoom: 15,
+                                    ),
+                                    onMapCreated: (controller) {},
+                                    onCameraMove: (position) {
+                                      setState(() {
+                                        _pickedLocation = position.target;
+                                      });
+                                    },
+                                    markers: _pickedLocation == null
+                                        ? {}
+                                        : {
+                                            Marker(
+                                              markerId: const MarkerId('picked'),
+                                              position: _pickedLocation!,
+                                            ),
+                                          },
+                                    myLocationButtonEnabled: true,
+                                    myLocationEnabled: true,
                                   ),
-                                },
-                          myLocationButtonEnabled: true,
-                          myLocationEnabled: true,
-                        ),
-                      ),
-                      Positioned(
-                        bottom: 12,
-                        right: 12,
-                        child: ElevatedButton.icon(
-                          onPressed: () {
-                            // Pin is always at center, so nothing to do
-                          },
-                          icon: const Icon(Icons.place),
-                          label: const Text('Pin Here'),
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor:
-                                Theme.of(context).colorScheme.primary,
-                            foregroundColor: Colors.white,
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(16),
+                                ),
+                                Positioned(
+                                  bottom: 12,
+                                  right: 12,
+                                  child: ElevatedButton.icon(
+                                    onPressed: () {
+                                      // Pin is always at center, so nothing to do
+                                    },
+                                    icon: const Icon(Icons.place),
+                                    label: const Text('Pin Here'),
+                                    style: ElevatedButton.styleFrom(
+                                      backgroundColor:
+                                          Theme.of(context).colorScheme.primary,
+                                      foregroundColor: Colors.white,
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(16),
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ],
                             ),
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
                 ),
                 const SizedBox(height: 28),
                 // Animal Type Detection
@@ -424,14 +548,11 @@ class _AddImageScreenState extends State<AddImageScreen>
                   duration: const Duration(milliseconds: 400),
                   curve: Curves.elasticOut,
                   child: ElevatedButton(
-                    onPressed: () {
-                      // TODO: Implement submit logic
-                    },
+                    onPressed: _submitReport,
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Theme.of(context).colorScheme.primary,
                       foregroundColor: Colors.white,
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 32, vertical: 16),
+                      padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(16),
                       ),
@@ -446,6 +567,8 @@ class _AddImageScreenState extends State<AddImageScreen>
                   ),
                 ),
                 const SizedBox(height: 32),
+                // Add extra padding at the bottom to account for the navigation bar
+                SizedBox(height: MediaQuery.of(context).padding.bottom + 80),
               ],
             ),
           ),
