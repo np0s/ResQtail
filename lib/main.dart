@@ -44,7 +44,6 @@ class MyApp extends StatelessWidget {
           primary: const Color(0xFF6750A4),
           secondary: const Color(0xFF03DAC6),
           surface: Colors.white,
-          background: Colors.white,
         ),
         useMaterial3: true,
         inputDecorationTheme: InputDecorationTheme(

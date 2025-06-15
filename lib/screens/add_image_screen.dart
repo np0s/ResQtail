@@ -28,10 +28,9 @@ class _AddImageScreenState extends State<AddImageScreen>
   late AnimationController _animController;
   late Animation<double> _fadeAnim;
   LatLng? _pickedLocation;
-  GoogleMapController? _mapController;
   LatLng _initialMapCenter = const LatLng(28.6139, 77.2090); // Default: New Delhi
   double _cameraCardScale = 1.0;
-  List<String> _customTags = [];
+  final List<String> _customTags = [];
 
   @override
   void initState() {
@@ -152,9 +151,9 @@ class _AddImageScreenState extends State<AddImageScreen>
                       color: Colors.deepPurple[400],
                       shadows: [
                         Shadow(
-                          color: Colors.deepPurple.withOpacity(0.15),
+                          color: Colors.deepPurple.withAlpha(38),
                           blurRadius: 12,
-                          offset: Offset(0, 4),
+                          offset: const Offset(0, 4),
                         ),
                       ],
                     ),
@@ -185,9 +184,9 @@ class _AddImageScreenState extends State<AddImageScreen>
                                   width: isMobile ? 220 : 320,
                                   height: isMobile ? 220 : 320,
                                   decoration: BoxDecoration(
-                                    color: Colors.white.withOpacity(0.7),
+                                    color: Colors.white.withAlpha(179),
                                     borderRadius: BorderRadius.circular(28),
-                                    boxShadow: [
+                                    boxShadow: const [
                                       BoxShadow(
                                         color: Colors.black12,
                                         blurRadius: 16,
@@ -216,9 +215,9 @@ class _AddImageScreenState extends State<AddImageScreen>
                   width: isMobile ? 280 : 400,
                   height: isMobile ? 200 : 240,
                   decoration: BoxDecoration(
-                    color: Colors.white,
+                    color: Colors.white.withAlpha(179),
                     borderRadius: BorderRadius.circular(28),
-                    boxShadow: [
+                    boxShadow: const [
                       BoxShadow(
                         color: Colors.black12,
                         blurRadius: 16,
@@ -235,8 +234,7 @@ class _AddImageScreenState extends State<AddImageScreen>
                             target: _pickedLocation ?? _initialMapCenter,
                             zoom: 15,
                           ),
-                          onMapCreated: (controller) =>
-                              _mapController = controller,
+                          onMapCreated: (controller) {},
                           onCameraMove: (position) {
                             setState(() {
                               _pickedLocation = position.target;
@@ -283,9 +281,9 @@ class _AddImageScreenState extends State<AddImageScreen>
                     padding:
                         const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                     decoration: BoxDecoration(
-                      color: Colors.white,
+                      color: Colors.white.withAlpha(179),
                       borderRadius: BorderRadius.circular(16),
-                      boxShadow: [
+                      boxShadow: const [
                         BoxShadow(
                           color: Colors.black12,
                           blurRadius: 16,
@@ -343,11 +341,11 @@ class _AddImageScreenState extends State<AddImageScreen>
                             }
                           });
                         },
-                        backgroundColor: Colors.white.withOpacity(0.7),
+                        backgroundColor: Colors.white.withAlpha(179),
                         selectedColor: Theme.of(context)
                             .colorScheme
                             .primary
-                            .withOpacity(0.2),
+                            .withAlpha(51),
                         checkmarkColor: Theme.of(context).colorScheme.primary,
                         labelStyle: TextStyle(
                           color: isSelected
@@ -372,11 +370,11 @@ class _AddImageScreenState extends State<AddImageScreen>
                             }
                           });
                         },
-                        backgroundColor: Colors.white.withOpacity(0.7),
+                        backgroundColor: Colors.white.withAlpha(179),
                         selectedColor: Theme.of(context)
                             .colorScheme
                             .primary
-                            .withOpacity(0.2),
+                            .withAlpha(51),
                         checkmarkColor: Theme.of(context).colorScheme.primary,
                         labelStyle: TextStyle(
                           color: isSelected
@@ -402,10 +400,10 @@ class _AddImageScreenState extends State<AddImageScreen>
                   margin: const EdgeInsets.symmetric(vertical: 8),
                   padding: const EdgeInsets.all(8),
                   decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.9),
+                    color: Colors.white.withAlpha(230),
                     borderRadius: BorderRadius.circular(12),
                     border: Border.all(
-                      color: Colors.deepPurple.withOpacity(0.2),
+                      color: Colors.deepPurple.withAlpha(51),
                       width: 1.2,
                     ),
                   ),
@@ -463,19 +461,19 @@ class _AddImageScreenState extends State<AddImageScreen>
       width: boxWidth,
       height: boxHeight,
       decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.3),
+        color: Colors.white.withAlpha(77),
         borderRadius: BorderRadius.circular(24),
         border: Border.all(
-          color: Theme.of(context).colorScheme.primary.withOpacity(0.5),
+          color: Theme.of(context).colorScheme.primary.withAlpha(128),
           width: 2,
           style: BorderStyle.solid,
         ),
       ),
       child: DottedBorder(
         borderType: BorderType.RRect,
-        radius: Radius.circular(24),
-        dashPattern: [8, 6],
-        color: Theme.of(context).colorScheme.primary.withOpacity(0.5),
+        radius: const Radius.circular(24),
+        dashPattern: const [8, 6],
+        color: Theme.of(context).colorScheme.primary.withAlpha(128),
         strokeWidth: 2,
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,

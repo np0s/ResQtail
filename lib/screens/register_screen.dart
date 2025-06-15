@@ -121,7 +121,7 @@ class _RegisterScreenState extends State<RegisterScreen> with SingleTickerProvid
                             'Sign up to get started (Dummy)',
                             style: TextStyle(
                               fontSize: 16,
-                              color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
+                              color: Theme.of(context).colorScheme.onSurface.withAlpha(179),
                             ),
                           ),
                           const SizedBox(height: 32),

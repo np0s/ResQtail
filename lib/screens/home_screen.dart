@@ -1,12 +1,7 @@
 import 'package:flutter/material.dart';
-import 'dart:io';
-import 'package:image_picker/image_picker.dart';
 import 'map_screen.dart'; // Import the MapScreen
 import 'profile_screen.dart'; // Import the ProfileScreen
 import 'add_image_screen.dart'; // Import the AddImageScreen
-import 'package:google_maps_flutter/google_maps_flutter.dart';
-import 'package:geolocator/geolocator.dart';
-import 'package:dotted_border/dotted_border.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({Key? key}) : super(key: key);
@@ -28,9 +23,9 @@ class _HomeScreenState extends State<HomeScreen>
   ];
 
   final List<Color> _bgColors = [
-    Color(0xFFF5F7FA),
-    Color(0xFFE3F2FD),
-    Color(0xFFF3E5F5),
+    const Color(0xFFF5F7FA),
+    const Color(0xFFE3F2FD),
+    const Color(0xFFF3E5F5),
   ];
 
   @override
@@ -73,7 +68,7 @@ class _HomeScreenState extends State<HomeScreen>
           body: Stack(
             children: [
               AnimatedSwitcher(
-                duration: Duration(milliseconds: 400),
+                duration: const Duration(milliseconds: 400),
                 child: _screens[_selectedIndex],
               ),
               Positioned(
@@ -96,7 +91,7 @@ class _HomeScreenState extends State<HomeScreen>
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(32),
-        boxShadow: [
+        boxShadow: const [
           BoxShadow(
             color: Colors.black12,
             blurRadius: 20,
@@ -130,7 +125,7 @@ class _HomeScreenState extends State<HomeScreen>
                       ? Theme.of(context).colorScheme.primary
                       : Colors.grey[200],
                   shape: BoxShape.circle,
-                  boxShadow: [
+                  boxShadow: const [
                     BoxShadow(
                       color: Colors.black12,
                       blurRadius: 16,
