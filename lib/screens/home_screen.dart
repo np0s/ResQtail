@@ -70,12 +70,21 @@ class _HomeScreenState extends State<HomeScreen>
       builder: (context, child) {
         return Scaffold(
           backgroundColor: _colorAnimation.value,
-          body: AnimatedSwitcher(
-            duration: Duration(milliseconds: 400),
-            child: _screens[_selectedIndex],
+          body: Stack(
+            children: [
+              AnimatedSwitcher(
+                duration: Duration(milliseconds: 400),
+                child: _screens[_selectedIndex],
+              ),
+              Positioned(
+                left: 0,
+                right: 0,
+                bottom: 0,
+                child: _buildBottomNavBar(context),
+              ),
+            ],
           ),
           extendBody: true,
-          bottomNavigationBar: _buildBottomNavBar(context),
         );
       },
     );
