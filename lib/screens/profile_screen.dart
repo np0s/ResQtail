@@ -22,7 +22,7 @@ class ProfileScreen extends StatelessWidget {
       ),
       child: SafeArea(
         child: Padding(
-          padding: const EdgeInsets.all(24.0),
+          padding: const EdgeInsets.fromLTRB(24.0, 24.0, 24.0, 100.0),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
