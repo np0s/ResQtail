@@ -112,7 +112,7 @@ class _VerificationScreenState extends State<VerificationScreen> with SingleTick
                             'Please enter the verification code sent to your email',
                             style: TextStyle(
                               fontSize: 16,
-                              color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
+                              color: Theme.of(context).colorScheme.onSurface.withAlpha(179),
                             ),
                             textAlign: TextAlign.center,
                           ),

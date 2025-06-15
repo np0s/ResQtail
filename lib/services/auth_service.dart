@@ -41,7 +41,7 @@ class AuthService extends ChangeNotifier {
         return json.decode(contents);
       }
     } catch (e) {
-      print('Error loading users: $e');
+      debugPrint('Error loading users: $e');
     }
     return {};
   }
@@ -51,7 +51,7 @@ class AuthService extends ChangeNotifier {
       final file = File(await _usersFilePath);
       await file.writeAsString(json.encode(users));
     } catch (e) {
-      print('Error saving users: $e');
+      debugPrint('Error saving users: $e');
     }
   }
 
@@ -79,7 +79,7 @@ class AuthService extends ChangeNotifier {
       // Check if user already exists
       final users = await _loadUsers();
       if (users.containsKey(email)) {
-        print('User already exists');
+        debugPrint('User already exists');
         return false;
       }
 
@@ -94,7 +94,7 @@ class AuthService extends ChangeNotifier {
       );
 
       if (!emailSent) {
-        print('Failed to send verification email');
+        debugPrint('Failed to send verification email');
         return false;
       }
 
@@ -127,9 +127,10 @@ class AuthService extends ChangeNotifier {
       _isEmailVerified = false;
       notifyListeners();
 
+      debugPrint('User registered successfully');
       return true;
     } catch (e) {
-      print('Registration error: $e');
+      debugPrint('Error during registration: $e');
       return false;
     }
   }
@@ -137,13 +138,13 @@ class AuthService extends ChangeNotifier {
   Future<bool> verifyEmail(String code) async {
     try {
       if (code != _verificationCode) {
-        print('Invalid verification code');
+        debugPrint('Invalid verification code');
         return false;
       }
 
       if (_verificationCodeExpiry == null ||
           DateTime.now().isAfter(_verificationCodeExpiry!)) {
-        print('Verification code has expired');
+        debugPrint('Verification code has expired');
         return false;
       }
 
@@ -161,7 +162,7 @@ class AuthService extends ChangeNotifier {
       notifyListeners();
       return true;
     } catch (e) {
-      print('Email verification error: $e');
+      debugPrint('Error during email verification: $e');
       return false;
     }
   }
@@ -190,9 +191,10 @@ class AuthService extends ChangeNotifier {
       _email = email;
       _isEmailVerified = true;
       notifyListeners();
+      debugPrint('User logged in successfully');
       return true;
     } catch (e) {
-      print('Login error: $e');
+      debugPrint('Error during login: $e');
       return false;
     }
   }
@@ -205,5 +207,6 @@ class AuthService extends ChangeNotifier {
     _userId = null;
     _email = null;
     notifyListeners();
+    debugPrint('User logged out successfully');
   }
 }
