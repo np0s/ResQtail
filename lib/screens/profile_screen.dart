@@ -5,6 +5,8 @@ import '../services/report_service.dart';
 import 'dart:io';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'report_details_screen.dart';
+import 'package:image_picker/image_picker.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({Key? key}) : super(key: key);
@@ -14,15 +16,49 @@ class ProfileScreen extends StatefulWidget {
 }
 
 class _ProfileScreenState extends State<ProfileScreen> {
+  final ImagePicker _picker = ImagePicker();
+  File? _profileImage;
+  bool _isEditingUsername = false;
+  final TextEditingController _usernameController = TextEditingController();
+
   @override
   void initState() {
     super.initState();
-    // Load reports when the screen is initialized
     context.read<ReportService>().loadReports();
+    final authService = context.read<AuthService>();
+    _usernameController.text =
+        authService.username ?? authService.email?.split('@')[0] ?? '';
+  }
+
+  @override
+  void dispose() {
+    _usernameController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _pickProfileImage() async {
+    final pickedFile = await _picker.pickImage(source: ImageSource.gallery);
+    if (pickedFile != null) {
+      setState(() {
+        _profileImage = File(pickedFile.path);
+      });
+      // Save profile image path to AuthService
+      context.read<AuthService>().updateProfileImage(pickedFile.path);
+    }
+  }
+
+  void _saveUsername() {
+    if (_usernameController.text.isNotEmpty) {
+      context.read<AuthService>().updateUsername(_usernameController.text);
+      setState(() {
+        _isEditingUsername = false;
+      });
+    }
   }
 
   Future<void> _openInMaps(LatLng location) async {
-    final url = 'https://www.google.com/maps/search/?api=1&query=${location.latitude},${location.longitude}';
+    final url =
+        'https://www.google.com/maps/search/?api=1&query=${location.latitude},${location.longitude}';
     if (await canLaunchUrl(Uri.parse(url))) {
       await launchUrl(Uri.parse(url));
     } else {
@@ -39,8 +75,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
     final authService = context.watch<AuthService>();
     final reportService = context.watch<ReportService>();
     final userEmail = authService.email ?? '';
+    final username = authService.username ?? userEmail.split('@')[0];
     final userId = authService.userId;
-    final userReports = userId != null ? reportService.getUserReports(userId) : [];
+    final userReports =
+        userId != null ? reportService.getUserReports(userId) : [];
+    final profileImagePath = authService.profileImagePath;
 
     return Container(
       width: double.infinity,
@@ -58,58 +97,188 @@ class _ProfileScreenState extends State<ProfileScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Text(
-                'Profile',
-                style: TextStyle(
-                  fontSize: 32,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-              const SizedBox(height: 32),
-              Center(
-                child: Column(
-                  children: [
-                    CircleAvatar(
-                      radius: 50,
-                      backgroundColor: Theme.of(context).colorScheme.primary,
-                      child: Text(
-                        userEmail.isNotEmpty ? userEmail[0].toUpperCase() : '?',
-                        style: const TextStyle(
-                          fontSize: 32,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.white,
+              // Header with profile picture, username, email, and logout
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Expanded(
+                    child: Row(
+                      children: [
+                        // Profile Picture
+                        GestureDetector(
+                          onTap: _pickProfileImage,
+                          child: Stack(
+                            children: [
+                              CircleAvatar(
+                                radius: 30,
+                                backgroundColor: Colors.deepPurple,
+                                backgroundImage: profileImagePath != null
+                                    ? FileImage(File(profileImagePath))
+                                    : null,
+                                child: profileImagePath == null
+                                    ? Text(
+                                        username[0].toUpperCase(),
+                                        style: const TextStyle(
+                                          fontSize: 24,
+                                          fontWeight: FontWeight.bold,
+                                          color: Colors.white,
+                                        ),
+                                      )
+                                    : null,
+                              ),
+                              Positioned(
+                                right: 0,
+                                bottom: 0,
+                                child: Container(
+                                  padding: const EdgeInsets.all(4),
+                                  decoration: const BoxDecoration(
+                                    color: Colors.deepPurple,
+                                    shape: BoxShape.circle,
+                                  ),
+                                  child: const Icon(
+                                    Icons.camera_alt,
+                                    size: 16,
+                                    color: Colors.white,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
                         ),
-                      ),
+                        const SizedBox(width: 16),
+                        // Username and Email
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              if (_isEditingUsername)
+                                Row(
+                                  children: [
+                                    Expanded(
+                                      child: TextField(
+                                        controller: _usernameController,
+                                        decoration: const InputDecoration(
+                                          isDense: true,
+                                          contentPadding: EdgeInsets.symmetric(
+                                            horizontal: 8,
+                                            vertical: 8,
+                                          ),
+                                          border: InputBorder.none,
+                                        ),
+                                        style: const TextStyle(
+                                          fontSize: 28,
+                                          fontWeight: FontWeight.bold,
+                                          color: Colors.deepPurple,
+                                        ),
+                                      ),
+                                    ),
+                                    IconButton(
+                                      icon: const Icon(Icons.check,
+                                          color: Colors.deepPurple),
+                                      onPressed: _saveUsername,
+                                      padding: EdgeInsets.zero,
+                                      constraints: const BoxConstraints(),
+                                    ),
+                                  ],
+                                )
+                              else
+                                Row(
+                                  children: [
+                                    Expanded(
+                                      child: Text(
+                                        username,
+                                        style: const TextStyle(
+                                          fontSize: 28,
+                                          fontWeight: FontWeight.bold,
+                                          color: Colors.deepPurple,
+                                        ),
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
+                                    ),
+                                    IconButton(
+                                      icon: const Icon(Icons.edit,
+                                          color: Colors.deepPurple, size: 20),
+                                      onPressed: () {
+                                        setState(() {
+                                          _isEditingUsername = true;
+                                        });
+                                      },
+                                      padding: EdgeInsets.zero,
+                                      constraints: const BoxConstraints(),
+                                    ),
+                                  ],
+                                ),
+                              Text(
+                                userEmail,
+                                style: TextStyle(
+                                  fontSize: 16,
+                                  color: Colors.deepPurple.withOpacity(0.7),
+                                ),
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
                     ),
-                    const SizedBox(height: 16),
-                    Text(
-                      userEmail,
-                      style: const TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
-                  ],
+                  ),
+                  IconButton(
+                    onPressed: () {
+                      context.read<AuthService>().logout();
+                    },
+                    icon: const Icon(Icons.logout, color: Colors.deepPurple),
+                    tooltip: 'Logout',
+                    padding: EdgeInsets.zero,
+                    constraints: const BoxConstraints(),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 24),
+              // Divider
+              Container(
+                height: 1,
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: [
+                      Colors.deepPurple.withOpacity(0.1),
+                      Colors.deepPurple.withOpacity(0.3),
+                      Colors.deepPurple.withOpacity(0.1),
+                    ],
+                  ),
                 ),
               ),
-              const SizedBox(height: 32),
+              const SizedBox(height: 24),
+              // Your Reports Section
               const Text(
                 'Your Reports',
                 style: TextStyle(
                   fontSize: 24,
                   fontWeight: FontWeight.bold,
+                  color: Colors.deepPurple,
                 ),
               ),
               const SizedBox(height: 16),
+              // Reports List
               Expanded(
                 child: userReports.isEmpty
-                    ? const Center(
-                        child: Text(
-                          'No reports yet',
-                          style: TextStyle(
-                            fontSize: 16,
-                            color: Colors.grey,
-                          ),
+                    ? Center(
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(
+                              Icons.pets,
+                              size: 64,
+                              color: Colors.deepPurple.withOpacity(0.3),
+                            ),
+                            const SizedBox(height: 16),
+                            Text(
+                              'No reports yet',
+                              style: TextStyle(
+                                fontSize: 18,
+                                color: Colors.deepPurple.withOpacity(0.5),
+                              ),
+                            ),
+                          ],
                         ),
                       )
                     : ListView.builder(
@@ -118,165 +287,119 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           final report = userReports[index];
                           return Card(
                             margin: const EdgeInsets.only(bottom: 16),
+                            elevation: 4,
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(16),
                             ),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                ClipRRect(
-                                  borderRadius: const BorderRadius.vertical(
-                                    top: Radius.circular(16),
+                            child: InkWell(
+                              onTap: () {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (context) => ReportDetailsScreen(
+                                      imagePath: report.imagePath,
+                                      detectedAnimalType:
+                                          report.detectedAnimalType,
+                                      description: report.description,
+                                      tags: report.tags.toList(),
+                                      location: report.location,
+                                      timestamp: report.timestamp,
+                                    ),
                                   ),
-                                  child: Image.file(
-                                    File(report.imagePath),
-                                    height: 200,
-                                    width: double.infinity,
-                                    fit: BoxFit.cover,
-                                  ),
-                                ),
-                                Padding(
-                                  padding: const EdgeInsets.all(16),
-                                  child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
-                                    children: [
-                                      if (report.detectedAnimalType != null)
-                                        Padding(
-                                          padding: const EdgeInsets.only(bottom: 8),
-                                          child: Row(
-                                            children: [
-                                              Icon(Icons.pets,
-                                                  color: Theme.of(context)
-                                                      .colorScheme
-                                                      .primary),
-                                              const SizedBox(width: 8),
-                                              Text(
-                                                'Detected: ${report.detectedAnimalType}',
-                                                style: const TextStyle(
-                                                  fontWeight: FontWeight.bold,
-                                                ),
-                                              ),
-                                            ],
-                                          ),
-                                        ),
-                                      if (report.description.isNotEmpty)
-                                        Padding(
-                                          padding: const EdgeInsets.only(bottom: 8),
-                                          child: Text(report.description),
-                                        ),
-                                      Wrap(
-                                        spacing: 8,
-                                        runSpacing: 8,
-                                        children: report.tags.map((tag) {
-                                          return Chip(
-                                            label: Text(tag),
-                                            backgroundColor: Theme.of(context)
-                                                .colorScheme
-                                                .primary
-                                                .withOpacity(0.1),
-                                            labelStyle: TextStyle(
-                                              color: Theme.of(context)
-                                                  .colorScheme
-                                                  .primary,
-                                            ),
-                                          );
-                                        }).toList().cast<Widget>(),
+                                );
+                              },
+                              borderRadius: BorderRadius.circular(16),
+                              child: Padding(
+                                padding: const EdgeInsets.all(16),
+                                child: Row(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    // Image
+                                    ClipRRect(
+                                      borderRadius: BorderRadius.circular(12),
+                                      child: Image.file(
+                                        File(report.imagePath),
+                                        width: 100,
+                                        height: 100,
+                                        fit: BoxFit.cover,
                                       ),
-                                      const SizedBox(height: 16),
-                                      // Location Section
-                                      Container(
-                                        padding: const EdgeInsets.all(12),
-                                        decoration: BoxDecoration(
-                                          color: Theme.of(context)
-                                              .colorScheme
-                                              .primary
-                                              .withOpacity(0.1),
-                                          borderRadius: BorderRadius.circular(12),
-                                        ),
-                                        child: Column(
-                                          crossAxisAlignment:
-                                              CrossAxisAlignment.start,
-                                          children: [
-                                            Row(
-                                              children: [
-                                                Icon(
-                                                  Icons.location_on,
-                                                  color: Theme.of(context)
-                                                      .colorScheme
-                                                      .primary,
-                                                  size: 20,
-                                                ),
-                                                const SizedBox(width: 8),
-                                                const Text(
-                                                  'Location',
-                                                  style: TextStyle(
-                                                    fontWeight: FontWeight.bold,
-                                                  ),
-                                                ),
-                                              ],
-                                            ),
-                                            const SizedBox(height: 8),
+                                    ),
+                                    const SizedBox(width: 16),
+                                    // Details
+                                    Expanded(
+                                      child: Column(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
+                                        children: [
+                                          if (report.detectedAnimalType != null)
                                             Text(
-                                              'Latitude: ${report.location.latitude.toStringAsFixed(6)}\nLongitude: ${report.location.longitude.toStringAsFixed(6)}',
+                                              report.detectedAnimalType!,
                                               style: const TextStyle(
-                                                fontSize: 14,
+                                                fontSize: 18,
+                                                fontWeight: FontWeight.bold,
+                                                color: Colors.deepPurple,
                                               ),
                                             ),
-                                            const SizedBox(height: 8),
-                                            SizedBox(
-                                              width: double.infinity,
-                                              child: ElevatedButton.icon(
-                                                onPressed: () =>
-                                                    _openInMaps(report.location),
-                                                icon: const Icon(Icons.map),
-                                                label: const Text('Open in Maps'),
-                                                style: ElevatedButton.styleFrom(
-                                                  backgroundColor:
-                                                      Theme.of(context)
-                                                          .colorScheme
-                                                          .primary,
-                                                  foregroundColor: Colors.white,
-                                                ),
-                                              ),
+                                          const SizedBox(height: 8),
+                                          // Tags
+                                          Wrap(
+                                            spacing: 8,
+                                            runSpacing: 4,
+                                            children: report.tags
+                                                .map((tag) {
+                                                  return Container(
+                                                    padding: const EdgeInsets
+                                                        .symmetric(
+                                                      horizontal: 8,
+                                                      vertical: 4,
+                                                    ),
+                                                    decoration: BoxDecoration(
+                                                      color: Colors.deepPurple
+                                                          .withOpacity(0.1),
+                                                      borderRadius:
+                                                          BorderRadius.circular(
+                                                              12),
+                                                    ),
+                                                    child: Text(
+                                                      tag,
+                                                      style: TextStyle(
+                                                        fontSize: 12,
+                                                        color: Colors.deepPurple
+                                                            .withOpacity(0.8),
+                                                      ),
+                                                    ),
+                                                  );
+                                                })
+                                                .toList()
+                                                .cast<Widget>(),
+                                          ),
+                                          const SizedBox(height: 8),
+                                          // Date
+                                          Text(
+                                            report.timestamp
+                                                .toString()
+                                                .split('.')[0],
+                                            style: TextStyle(
+                                              fontSize: 12,
+                                              color: Colors.grey[600],
                                             ),
-                                          ],
-                                        ),
+                                          ),
+                                        ],
                                       ),
-                                      const SizedBox(height: 8),
-                                      Text(
-                                        'Reported on ${report.timestamp.toString().split('.')[0]}',
-                                        style: const TextStyle(
-                                          color: Colors.grey,
-                                          fontSize: 12,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
+                                    ),
+                                    // View Details Button
+                                    Icon(
+                                      Icons.arrow_forward_ios,
+                                      size: 16,
+                                      color: Colors.deepPurple.withOpacity(0.5),
+                                    ),
+                                  ],
                                 ),
-                              ],
+                              ),
                             ),
                           );
                         },
                       ),
-              ),
-              const SizedBox(height: 16),
-              SizedBox(
-                width: double.infinity,
-                child: ElevatedButton.icon(
-                  onPressed: () {
-                    context.read<AuthService>().logout();
-                  },
-                  icon: const Icon(Icons.logout),
-                  label: const Text('Logout'),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Theme.of(context).colorScheme.error,
-                    foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(vertical: 16),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                  ),
-                ),
               ),
             ],
           ),
@@ -284,4 +407,4 @@ class _ProfileScreenState extends State<ProfileScreen> {
       ),
     );
   }
-} 
+}

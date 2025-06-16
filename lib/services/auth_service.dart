@@ -6,11 +6,14 @@ import 'package:uuid/uuid.dart';
 import 'dart:io';
 import 'package:path_provider/path_provider.dart';
 import 'email_service.dart';
+import 'package:flutter/material.dart';
 
 class AuthService extends ChangeNotifier {
   bool _isLoggedIn = false;
   String? _userId;
   String? _email;
+  String? _username;
+  String? _profileImagePath;
   bool _isEmailVerified = false;
   String? _verificationCode;
   DateTime? _verificationCodeExpiry;
@@ -26,6 +29,8 @@ class AuthService extends ChangeNotifier {
   bool get isLoggedIn => _isLoggedIn;
   String? get userId => _userId;
   String? get email => _email;
+  String? get username => _username;
+  String? get profileImagePath => _profileImagePath;
   bool get isEmailVerified => _isEmailVerified;
 
   Future<String> get _usersFilePath async {
@@ -55,13 +60,36 @@ class AuthService extends ChangeNotifier {
     }
   }
 
-  Future<void> checkLoginStatus() async {
+  Future<void> _loadUserData() async {
     final prefs = await SharedPreferences.getInstance();
     _isLoggedIn = prefs.getBool('isLoggedIn') ?? false;
-    _userId = prefs.getString('userId');
     _email = prefs.getString('email');
+    _userId = prefs.getString('userId');
+    _username = prefs.getString('username');
+    _profileImagePath = prefs.getString('profileImagePath');
     _isEmailVerified = prefs.getBool('isEmailVerified') ?? false;
+    _verificationCode = prefs.getString('verificationCode');
+    _verificationCodeExpiry = prefs.getString('verificationCodeExpiry') != null
+        ? DateTime.parse(prefs.getString('verificationCodeExpiry')!)
+        : null;
     notifyListeners();
+  }
+
+  Future<void> _saveUserData() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool('isLoggedIn', _isLoggedIn);
+    await prefs.setString('email', _email ?? '');
+    await prefs.setString('userId', _userId ?? '');
+    await prefs.setString('username', _username ?? '');
+    await prefs.setString('profileImagePath', _profileImagePath ?? '');
+    await prefs.setBool('isEmailVerified', _isEmailVerified);
+    await prefs.setString('verificationCode', _verificationCode ?? '');
+    await prefs.setString('verificationCodeExpiry',
+        _verificationCodeExpiry?.toIso8601String() ?? '');
+  }
+
+  Future<void> checkLoginStatus() async {
+    await _loadUserData();
   }
 
   String _hashPassword(String password) {
@@ -113,17 +141,11 @@ class AuthService extends ChangeNotifier {
       await _saveUsers(users);
 
       // Save to local preferences
-      final prefs = await SharedPreferences.getInstance();
-      await prefs.setString('userId', userId);
-      await prefs.setString('email', email);
-      await prefs.setString('password', hashedPassword);
-      await prefs.setBool('isEmailVerified', false);
-      await prefs.setString('verificationCode', _verificationCode!);
-      await prefs.setString(
-          'verificationCodeExpiry', _verificationCodeExpiry!.toIso8601String());
+      await _saveUserData();
 
       _userId = userId;
       _email = email;
+      _username = email.split('@')[0];
       _isEmailVerified = false;
       notifyListeners();
 
@@ -156,8 +178,8 @@ class AuthService extends ChangeNotifier {
       }
 
       // Update local preferences
-      final prefs = await SharedPreferences.getInstance();
-      await prefs.setBool('isEmailVerified', true);
+      await _saveUserData();
+
       _isEmailVerified = true;
       notifyListeners();
       return true;
@@ -180,16 +202,9 @@ class AuthService extends ChangeNotifier {
       }
 
       // Update local preferences
-      final prefs = await SharedPreferences.getInstance();
-      await prefs.setBool('isLoggedIn', true);
-      await prefs.setString('userId', userData['userId']);
-      await prefs.setString('email', email);
-      await prefs.setBool('isEmailVerified', true);
+      await _saveUserData();
 
       _isLoggedIn = true;
-      _userId = userData['userId'];
-      _email = email;
-      _isEmailVerified = true;
       notifyListeners();
       debugPrint('User logged in successfully');
       return true;
@@ -200,13 +215,28 @@ class AuthService extends ChangeNotifier {
   }
 
   Future<void> logout() async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setBool('isLoggedIn', false);
-
     _isLoggedIn = false;
-    _userId = null;
     _email = null;
+    _userId = null;
+    _username = null;
+    _profileImagePath = null;
+    _isEmailVerified = false;
+    _verificationCode = null;
+    _verificationCodeExpiry = null;
+    await _saveUserData();
     notifyListeners();
     debugPrint('User logged out successfully');
+  }
+
+  Future<void> updateUsername(String newUsername) async {
+    _username = newUsername;
+    await _saveUserData();
+    notifyListeners();
+  }
+
+  Future<void> updateProfileImage(String imagePath) async {
+    _profileImagePath = imagePath;
+    await _saveUserData();
+    notifyListeners();
   }
 }
