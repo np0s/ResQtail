@@ -3,8 +3,7 @@ import 'package:provider/provider.dart';
 import '../services/auth_service.dart';
 import '../services/report_service.dart';
 import 'dart:io';
-import 'package:google_maps_flutter/google_maps_flutter.dart';
-import 'package:url_launcher/url_launcher.dart';
+import 'report_details_screen.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({Key? key}) : super(key: key);
@@ -14,24 +13,24 @@ class ProfileScreen extends StatefulWidget {
 }
 
 class _ProfileScreenState extends State<ProfileScreen> {
+  late TextEditingController _usernameController;
+  bool _isEditingUsername = false;
+  String? _username;
+
   @override
   void initState() {
     super.initState();
-    // Load reports when the screen is initialized
     context.read<ReportService>().loadReports();
+    final authService = context.read<AuthService>();
+    final userEmail = authService.email ?? '';
+    _username = userEmail.split('@')[0];
+    _usernameController = TextEditingController(text: _username);
   }
 
-  Future<void> _openInMaps(LatLng location) async {
-    final url = 'https://www.google.com/maps/search/?api=1&query=${location.latitude},${location.longitude}';
-    if (await canLaunchUrl(Uri.parse(url))) {
-      await launchUrl(Uri.parse(url));
-    } else {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Could not open maps')),
-        );
-      }
-    }
+  @override
+  void dispose() {
+    _usernameController.dispose();
+    super.dispose();
   }
 
   @override
@@ -40,7 +39,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
     final reportService = context.watch<ReportService>();
     final userEmail = authService.email ?? '';
     final userId = authService.userId;
-    final userReports = userId != null ? reportService.getUserReports(userId) : [];
+    final userReports =
+        userId != null ? reportService.getUserReports(userId) : [];
+    final username = _username ?? userEmail.split('@')[0];
 
     return Container(
       width: double.infinity,
@@ -58,58 +59,149 @@ class _ProfileScreenState extends State<ProfileScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Text(
-                'Profile',
-                style: TextStyle(
-                  fontSize: 32,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-              const SizedBox(height: 32),
-              Center(
-                child: Column(
-                  children: [
-                    CircleAvatar(
-                      radius: 50,
-                      backgroundColor: Theme.of(context).colorScheme.primary,
-                      child: Text(
-                        userEmail.isNotEmpty ? userEmail[0].toUpperCase() : '?',
-                        style: const TextStyle(
-                          fontSize: 32,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.white,
+              // Header Section with User Info and Logout
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Expanded(
+                    child: Row(
+                      children: [
+                        CircleAvatar(
+                          radius: 24,
+                          backgroundColor: Colors.deepPurple[100],
+                          child: Icon(Icons.person,
+                              color: Colors.deepPurple, size: 32),
                         ),
-                      ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              _isEditingUsername
+                                  ? Row(
+                                      children: [
+                                        Expanded(
+                                          child: TextField(
+                                            controller: _usernameController,
+                                            autofocus: true,
+                                            style: const TextStyle(
+                                              fontSize: 24,
+                                              fontWeight: FontWeight.bold,
+                                              color: Colors.deepPurple,
+                                            ),
+                                            decoration: const InputDecoration(
+                                              border: InputBorder.none,
+                                              isDense: true,
+                                              contentPadding: EdgeInsets.zero,
+                                            ),
+                                          ),
+                                        ),
+                                        IconButton(
+                                          icon: const Icon(Icons.check,
+                                              color: Colors.deepPurple),
+                                          onPressed: () {
+                                            setState(() {
+                                              _username =
+                                                  _usernameController.text;
+                                              _isEditingUsername = false;
+                                            });
+                                          },
+                                        ),
+                                      ],
+                                    )
+                                  : Row(
+                                      children: [
+                                        Expanded(
+                                          child: Text(
+                                            username,
+                                            style: const TextStyle(
+                                              fontSize: 28,
+                                              fontWeight: FontWeight.bold,
+                                              color: Colors.deepPurple,
+                                            ),
+                                            overflow: TextOverflow.ellipsis,
+                                          ),
+                                        ),
+                                        IconButton(
+                                          icon: const Icon(Icons.edit,
+                                              color: Colors.deepPurple),
+                                          onPressed: () {
+                                            setState(() {
+                                              _isEditingUsername = true;
+                                            });
+                                          },
+                                        ),
+                                      ],
+                                    ),
+                              const SizedBox(height: 4),
+                              Text(
+                                userEmail,
+                                style: TextStyle(
+                                  fontSize: 16,
+                                  color: Colors.deepPurple.withOpacity(0.7),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
                     ),
-                    const SizedBox(height: 16),
-                    Text(
-                      userEmail,
-                      style: const TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
-                  ],
+                  ),
+                  IconButton(
+                    onPressed: () {
+                      context.read<AuthService>().logout();
+                    },
+                    icon: const Icon(Icons.logout, color: Colors.deepPurple),
+                    tooltip: 'Logout',
+                  ),
+                ],
+              ),
+              const SizedBox(height: 24),
+              // Divider
+              Container(
+                height: 1,
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: [
+                      Colors.deepPurple.withOpacity(0.1),
+                      Colors.deepPurple.withOpacity(0.3),
+                      Colors.deepPurple.withOpacity(0.1),
+                    ],
+                  ),
                 ),
               ),
-              const SizedBox(height: 32),
+              const SizedBox(height: 24),
+              // Your Reports Section
               const Text(
                 'Your Reports',
                 style: TextStyle(
                   fontSize: 24,
                   fontWeight: FontWeight.bold,
+                  color: Colors.deepPurple,
                 ),
               ),
               const SizedBox(height: 16),
+              // Reports List
               Expanded(
                 child: userReports.isEmpty
-                    ? const Center(
-                        child: Text(
-                          'No reports yet',
-                          style: TextStyle(
-                            fontSize: 16,
-                            color: Colors.grey,
-                          ),
+                    ? Center(
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(
+                              Icons.pets,
+                              size: 64,
+                              color: Colors.deepPurple.withOpacity(0.5),
+                            ),
+                            const SizedBox(height: 16),
+                            Text(
+                              'No reports yet',
+                              style: TextStyle(
+                                fontSize: 18,
+                                color: Colors.deepPurple.withOpacity(0.7),
+                              ),
+                            ),
+                          ],
                         ),
                       )
                     : ListView.builder(
@@ -118,165 +210,100 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           final report = userReports[index];
                           return Card(
                             margin: const EdgeInsets.only(bottom: 16),
+                            elevation: 4,
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(16),
                             ),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                ClipRRect(
-                                  borderRadius: const BorderRadius.vertical(
-                                    top: Radius.circular(16),
+                            child: InkWell(
+                              onTap: () {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (context) =>
+                                        ReportDetailsScreen(report: report),
                                   ),
-                                  child: Image.file(
-                                    File(report.imagePath),
-                                    height: 200,
-                                    width: double.infinity,
-                                    fit: BoxFit.cover,
-                                  ),
-                                ),
-                                Padding(
-                                  padding: const EdgeInsets.all(16),
-                                  child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
-                                    children: [
-                                      if (report.detectedAnimalType != null)
-                                        Padding(
-                                          padding: const EdgeInsets.only(bottom: 8),
-                                          child: Row(
-                                            children: [
-                                              Icon(Icons.pets,
-                                                  color: Theme.of(context)
-                                                      .colorScheme
-                                                      .primary),
-                                              const SizedBox(width: 8),
-                                              Text(
-                                                'Detected: ${report.detectedAnimalType}',
-                                                style: const TextStyle(
-                                                  fontWeight: FontWeight.bold,
-                                                ),
-                                              ),
-                                            ],
-                                          ),
-                                        ),
-                                      if (report.description.isNotEmpty)
-                                        Padding(
-                                          padding: const EdgeInsets.only(bottom: 8),
-                                          child: Text(report.description),
-                                        ),
-                                      Wrap(
-                                        spacing: 8,
-                                        runSpacing: 8,
-                                        children: report.tags.map((tag) {
-                                          return Chip(
-                                            label: Text(tag),
-                                            backgroundColor: Theme.of(context)
-                                                .colorScheme
-                                                .primary
-                                                .withOpacity(0.1),
-                                            labelStyle: TextStyle(
-                                              color: Theme.of(context)
-                                                  .colorScheme
-                                                  .primary,
-                                            ),
-                                          );
-                                        }).toList().cast<Widget>(),
+                                );
+                              },
+                              borderRadius: BorderRadius.circular(16),
+                              child: Padding(
+                                padding: const EdgeInsets.all(12.0),
+                                child: Row(
+                                  children: [
+                                    ClipRRect(
+                                      borderRadius: BorderRadius.circular(12),
+                                      child: Image.file(
+                                        File(report.imagePath),
+                                        height: 64,
+                                        width: 64,
+                                        fit: BoxFit.cover,
                                       ),
-                                      const SizedBox(height: 16),
-                                      // Location Section
-                                      Container(
-                                        padding: const EdgeInsets.all(12),
-                                        decoration: BoxDecoration(
-                                          color: Theme.of(context)
-                                              .colorScheme
-                                              .primary
-                                              .withOpacity(0.1),
-                                          borderRadius: BorderRadius.circular(12),
-                                        ),
-                                        child: Column(
-                                          crossAxisAlignment:
-                                              CrossAxisAlignment.start,
-                                          children: [
-                                            Row(
-                                              children: [
-                                                Icon(
-                                                  Icons.location_on,
-                                                  color: Theme.of(context)
-                                                      .colorScheme
-                                                      .primary,
-                                                  size: 20,
-                                                ),
-                                                const SizedBox(width: 8),
-                                                const Text(
-                                                  'Location',
-                                                  style: TextStyle(
-                                                    fontWeight: FontWeight.bold,
+                                    ),
+                                    const SizedBox(width: 16),
+                                    Expanded(
+                                      child: Column(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
+                                        children: [
+                                          Text(
+                                            report.detectedAnimalType ??
+                                                'Unknown Animal',
+                                            style: const TextStyle(
+                                              fontSize: 18,
+                                              fontWeight: FontWeight.bold,
+                                            ),
+                                          ),
+                                          const SizedBox(height: 4),
+                                          Row(
+                                            children: [
+                                              if (report.tags.isNotEmpty)
+                                                Container(
+                                                  padding: const EdgeInsets
+                                                      .symmetric(
+                                                      horizontal: 10,
+                                                      vertical: 4),
+                                                  decoration: BoxDecoration(
+                                                    color: Theme.of(context)
+                                                        .colorScheme
+                                                        .primary
+                                                        .withOpacity(0.1),
+                                                    borderRadius:
+                                                        BorderRadius.circular(
+                                                            16),
                                                   ),
-                                                ),
-                                              ],
-                                            ),
-                                            const SizedBox(height: 8),
-                                            Text(
-                                              'Latitude: ${report.location.latitude.toStringAsFixed(6)}\nLongitude: ${report.location.longitude.toStringAsFixed(6)}',
-                                              style: const TextStyle(
-                                                fontSize: 14,
-                                              ),
-                                            ),
-                                            const SizedBox(height: 8),
-                                            SizedBox(
-                                              width: double.infinity,
-                                              child: ElevatedButton.icon(
-                                                onPressed: () =>
-                                                    _openInMaps(report.location),
-                                                icon: const Icon(Icons.map),
-                                                label: const Text('Open in Maps'),
-                                                style: ElevatedButton.styleFrom(
-                                                  backgroundColor:
-                                                      Theme.of(context)
+                                                  child: Text(
+                                                    report.tags.first,
+                                                    style: TextStyle(
+                                                      color: Theme.of(context)
                                                           .colorScheme
                                                           .primary,
-                                                  foregroundColor: Colors.white,
+                                                      fontSize: 12,
+                                                      fontWeight:
+                                                          FontWeight.w500,
+                                                    ),
+                                                  ),
                                                 ),
-                                              ),
+                                            ],
+                                          ),
+                                          const SizedBox(height: 8),
+                                          Text(
+                                            _formatDate(report.timestamp),
+                                            style: TextStyle(
+                                              color: Colors.grey[600],
+                                              fontSize: 12,
                                             ),
-                                          ],
-                                        ),
+                                          ),
+                                        ],
                                       ),
-                                      const SizedBox(height: 8),
-                                      Text(
-                                        'Reported on ${report.timestamp.toString().split('.')[0]}',
-                                        style: const TextStyle(
-                                          color: Colors.grey,
-                                          fontSize: 12,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
+                                    ),
+                                    const Icon(Icons.chevron_right,
+                                        color: Colors.deepPurple, size: 28),
+                                  ],
                                 ),
-                              ],
+                              ),
                             ),
                           );
                         },
                       ),
-              ),
-              const SizedBox(height: 16),
-              SizedBox(
-                width: double.infinity,
-                child: ElevatedButton.icon(
-                  onPressed: () {
-                    context.read<AuthService>().logout();
-                  },
-                  icon: const Icon(Icons.logout),
-                  label: const Text('Logout'),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Theme.of(context).colorScheme.error,
-                    foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(vertical: 16),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                  ),
-                ),
               ),
             ],
           ),
@@ -284,4 +311,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
       ),
     );
   }
-} 
+
+  String _formatDate(DateTime date) {
+    return "${date.year.toString().padLeft(4, '0')}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')} "
+        "${date.hour.toString().padLeft(2, '0')}:${date.minute.toString().padLeft(2, '0')}:${date.second.toString().padLeft(2, '0')}";
+  }
+}

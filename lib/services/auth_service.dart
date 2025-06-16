@@ -14,6 +14,7 @@ class AuthService extends ChangeNotifier {
   bool _isEmailVerified = false;
   String? _verificationCode;
   DateTime? _verificationCodeExpiry;
+  String? _profileImagePath;
   final EmailService _emailService;
   static const String _usersFileName = 'users.json';
 
@@ -27,6 +28,7 @@ class AuthService extends ChangeNotifier {
   String? get userId => _userId;
   String? get email => _email;
   bool get isEmailVerified => _isEmailVerified;
+  String? get profileImagePath => _profileImagePath;
 
   Future<String> get _usersFilePath async {
     final directory = await getApplicationDocumentsDirectory();
@@ -61,6 +63,7 @@ class AuthService extends ChangeNotifier {
     _userId = prefs.getString('userId');
     _email = prefs.getString('email');
     _isEmailVerified = prefs.getBool('isEmailVerified') ?? false;
+    _profileImagePath = prefs.getString('profileImagePath');
     notifyListeners();
   }
 
@@ -109,6 +112,7 @@ class AuthService extends ChangeNotifier {
         'isEmailVerified': false,
         'verificationCode': _verificationCode,
         'verificationCodeExpiry': _verificationCodeExpiry!.toIso8601String(),
+        'profileImagePath': null,
       };
       await _saveUsers(users);
 
@@ -121,10 +125,12 @@ class AuthService extends ChangeNotifier {
       await prefs.setString('verificationCode', _verificationCode!);
       await prefs.setString(
           'verificationCodeExpiry', _verificationCodeExpiry!.toIso8601String());
+      await prefs.setString('profileImagePath', '');
 
       _userId = userId;
       _email = email;
       _isEmailVerified = false;
+      _profileImagePath = null;
       notifyListeners();
 
       debugPrint('User registered successfully');
@@ -185,11 +191,14 @@ class AuthService extends ChangeNotifier {
       await prefs.setString('userId', userData['userId']);
       await prefs.setString('email', email);
       await prefs.setBool('isEmailVerified', true);
+      await prefs.setString(
+          'profileImagePath', userData['profileImagePath'] ?? '');
 
       _isLoggedIn = true;
       _userId = userData['userId'];
       _email = email;
       _isEmailVerified = true;
+      _profileImagePath = userData['profileImagePath'];
       notifyListeners();
       debugPrint('User logged in successfully');
       return true;
@@ -202,11 +211,26 @@ class AuthService extends ChangeNotifier {
   Future<void> logout() async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setBool('isLoggedIn', false);
-
+    await prefs.setString('profileImagePath', '');
     _isLoggedIn = false;
     _userId = null;
     _email = null;
+    _profileImagePath = null;
     notifyListeners();
     debugPrint('User logged out successfully');
+  }
+
+  Future<void> setProfileImagePath(String path) async {
+    _profileImagePath = path;
+    // Update users file
+    final users = await _loadUsers();
+    if (_email != null && users.containsKey(_email)) {
+      users[_email]!['profileImagePath'] = path;
+      await _saveUsers(users);
+    }
+    // Update local preferences
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString('profileImagePath', path);
+    notifyListeners();
   }
 }
