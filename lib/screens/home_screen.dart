@@ -1,13 +1,16 @@
 import 'package:flutter/material.dart';
 import 'dart:io';
 import 'package:image_picker/image_picker.dart';
-import 'map_screen.dart'; // Import the MapScreen
-import 'profile_screen.dart'; // Import the ProfileScreen
+import 'map_screen.dart';
+import 'profile_screen.dart';
+import 'add_image_screen.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:dotted_border/dotted_border.dart';
 import 'package:provider/provider.dart';
 import '../services/auth_service.dart';
+import '../services/report_service.dart';
+import 'package:uuid/uuid.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({Key? key}) : super(key: key);
@@ -25,18 +28,15 @@ class _HomeScreenState extends State<HomeScreen>
   final ImagePicker _picker = ImagePicker();
 
   final List<Widget> _screens = [
-    // Add Screen
-    Builder(
-      builder: (context) => _AddImageScreen(),
-    ),
-    const MapScreen(), // Replace placeholder with actual MapScreen
-    const ProfileScreen(), // Use the actual ProfileScreen
+    const AddImageScreen(),
+    const MapScreen(),
+    const ProfileScreen(),
   ];
 
   final List<Color> _bgColors = [
-    Color(0xFFF5F7FA),
-    Color(0xFFE3F2FD),
-    Color(0xFFF3E5F5),
+    const Color(0xFFF5F7FA),
+    const Color(0xFFE3F2FD),
+    const Color(0xFFF3E5F5),
   ];
 
   @override
@@ -76,12 +76,20 @@ class _HomeScreenState extends State<HomeScreen>
       builder: (context, child) {
         return Scaffold(
           backgroundColor: _colorAnimation.value,
-          body: AnimatedSwitcher(
-            duration: Duration(milliseconds: 400),
-            child: _screens[_selectedIndex],
+          body: Stack(
+            children: [
+              AnimatedSwitcher(
+                duration: const Duration(milliseconds: 400),
+                child: _screens[_selectedIndex],
+              ),
+              Positioned(
+                left: 0,
+                right: 0,
+                bottom: 0,
+                child: _buildBottomNavBar(context),
+              ),
+            ],
           ),
-          extendBody: true,
-          bottomNavigationBar: _buildBottomNavBar(context),
         );
       },
     );
@@ -93,7 +101,7 @@ class _HomeScreenState extends State<HomeScreen>
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(32),
-        boxShadow: [
+        boxShadow: const [
           BoxShadow(
             color: Colors.black12,
             blurRadius: 20,
@@ -127,7 +135,7 @@ class _HomeScreenState extends State<HomeScreen>
                       ? Theme.of(context).colorScheme.primary
                       : Colors.grey[200],
                   shape: BoxShape.circle,
-                  boxShadow: [
+                  boxShadow: const [
                     BoxShadow(
                       color: Colors.black12,
                       blurRadius: 16,
@@ -140,8 +148,7 @@ class _HomeScreenState extends State<HomeScreen>
                   ),
                 ),
                 child: Icon(Icons.map,
-                    color:
-                        _selectedIndex == 1 ? Colors.white : Colors.grey[500],
+                    color: _selectedIndex == 1 ? Colors.white : Colors.grey[500],
                     size: 40),
               ),
             ),
@@ -174,8 +181,7 @@ class _HomeScreenState extends State<HomeScreen>
                                 decoration: BoxDecoration(
                                   shape: BoxShape.circle,
                                   border: Border.all(
-                                    color:
-                                        Theme.of(context).colorScheme.primary,
+                                    color: Theme.of(context).colorScheme.primary,
                                     width: 3,
                                   ),
                                 ),
@@ -218,7 +224,8 @@ class _AddImageScreenState extends State<_AddImageScreen>
   LatLng _initialMapCenter =
       const LatLng(28.6139, 77.2090); // Default: New Delhi
   double _cameraCardScale = 1.0;
-  List<String> _customTags = [];
+  final List<String> _customTags = [];
+  bool _isLoadingLocation = true;
 
   @override
   void initState() {
@@ -236,16 +243,53 @@ class _AddImageScreenState extends State<_AddImageScreen>
 
   Future<void> _setInitialLocation() async {
     try {
-      final pos = await Geolocator.getCurrentPosition();
-      setState(() {
-        _initialMapCenter = LatLng(pos.latitude, pos.longitude);
-        _pickedLocation = _initialMapCenter;
-      });
-    } catch (_) {
-      // Use default location
-      setState(() {
-        _pickedLocation = _initialMapCenter;
-      });
+      // Check location permission
+      LocationPermission permission = await Geolocator.checkPermission();
+      if (permission == LocationPermission.denied) {
+        permission = await Geolocator.requestPermission();
+        if (permission == LocationPermission.denied) {
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text('Location permission denied')),
+            );
+          }
+          return;
+        }
+      }
+
+      if (permission == LocationPermission.deniedForever) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Location permission permanently denied. Please enable in settings.'),
+            ),
+          );
+        }
+        return;
+      }
+
+      // Get current position
+      final position = await Geolocator.getCurrentPosition(
+        desiredAccuracy: LocationAccuracy.high,
+      );
+
+      if (mounted) {
+        setState(() {
+          _initialMapCenter = LatLng(position.latitude, position.longitude);
+          _pickedLocation = _initialMapCenter;
+          _isLoadingLocation = false;
+        });
+      }
+    } catch (e) {
+      debugPrint('Error getting location: $e');
+      if (mounted) {
+        setState(() {
+          _isLoadingLocation = false;
+        });
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Could not get current location')),
+        );
+      }
     }
   }
 
@@ -260,44 +304,84 @@ class _AddImageScreenState extends State<_AddImageScreen>
     }
   }
 
-  void _showAddTagDialog() async {
-    String newTag = '';
-    await showDialog(
-      context: context,
-      builder: (context) {
-        return AlertDialog(
-          title: const Text('Add Custom Tag'),
-          content: TextField(
-            autofocus: true,
-            decoration: const InputDecoration(hintText: 'Enter tag'),
-            onChanged: (val) => newTag = val.trim(),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: const Text('Cancel'),
-            ),
-            ElevatedButton(
-              onPressed: () {
-                if (newTag.isNotEmpty) {
-                  setState(() {
-                    _customTags.add(newTag);
-                    _selectedTags.add(newTag);
-                  });
-                }
-                Navigator.pop(context);
-              },
-              child: const Text('Add'),
-            ),
-          ],
+  Future<void> _submitReport() async {
+    if (_image == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please add an image first')),
+      );
+      return;
+    }
+
+    if (_pickedLocation == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please select a location')),
+      );
+      return;
+    }
+
+    if (_selectedTags.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please select at least one tag')),
+      );
+      return;
+    }
+
+    final authService = context.read<AuthService>();
+    final reportService = context.read<ReportService>();
+    final userId = authService.userId;
+
+    if (userId == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please login to submit a report')),
+      );
+      return;
+    }
+
+    try {
+      // Create a unique ID for the report
+      final reportId = const Uuid().v4();
+
+      // Create the report
+      final report = Report(
+        id: reportId,
+        userId: userId,
+        imagePath: _image!.path,
+        description: _descriptionController.text,
+        tags: _selectedTags,
+        detectedAnimalType: _detectedAnimalType,
+        location: _pickedLocation!,
+        timestamp: DateTime.now(),
+      );
+
+      // Save the report
+      await reportService.addReport(report);
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Report submitted successfully')),
         );
-      },
-    );
+        // Clear the form
+        setState(() {
+          _image = null;
+          _selectedTags.clear();
+          _descriptionController.clear();
+          _detectedAnimalType = null;
+          _pickedLocation = _initialMapCenter;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Failed to submit report')),
+        );
+      }
+    }
   }
 
   @override
   void dispose() {
     _animController.dispose();
+    _descriptionController.dispose();
     super.dispose();
   }
 
@@ -613,9 +697,7 @@ class _AddImageScreenState extends State<_AddImageScreen>
                   duration: const Duration(milliseconds: 400),
                   curve: Curves.elasticOut,
                   child: ElevatedButton(
-                    onPressed: () {
-                      // TODO: Implement submit logic
-                    },
+                    onPressed: _submitReport,
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Theme.of(context).colorScheme.primary,
                       foregroundColor: Colors.white,
@@ -731,6 +813,41 @@ class _AddImageScreenState extends State<_AddImageScreen>
           ],
         ),
       ),
+    );
+  }
+
+  void _showAddTagDialog() async {
+    String newTag = '';
+    await showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: const Text('Add Custom Tag'),
+          content: TextField(
+            autofocus: true,
+            decoration: const InputDecoration(hintText: 'Enter tag'),
+            onChanged: (val) => newTag = val.trim(),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Cancel'),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                if (newTag.isNotEmpty) {
+                  setState(() {
+                    _customTags.add(newTag);
+                    _selectedTags.add(newTag);
+                  });
+                }
+                Navigator.pop(context);
+              },
+              child: const Text('Add'),
+            ),
+          ],
+        );
+      },
     );
   }
 }

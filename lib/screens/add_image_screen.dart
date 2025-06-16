@@ -36,6 +36,7 @@ class _AddImageScreenState extends State<AddImageScreen>
   double _cameraCardScale = 1.0;
   final List<String> _customTags = [];
   bool _isLoadingLocation = true;
+  GoogleMapController? _mapController;
 
   @override
   void initState() {
@@ -251,6 +252,7 @@ class _AddImageScreenState extends State<AddImageScreen>
               left: isMobile ? 16 : 80,
               right: isMobile ? 16 : 80,
               top: isMobile ? 24 : 40,
+              bottom: MediaQuery.of(context).padding.bottom + 32,
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.center,
@@ -267,9 +269,9 @@ class _AddImageScreenState extends State<AddImageScreen>
                       color: Colors.deepPurple[400],
                       shadows: [
                         Shadow(
-                          color: Colors.deepPurple.withAlpha(38),
+                          color: Colors.deepPurple.withOpacity(0.15),
                           blurRadius: 12,
-                          offset: const Offset(0, 4),
+                          offset: Offset(0, 4),
                         ),
                       ],
                     ),
@@ -300,9 +302,9 @@ class _AddImageScreenState extends State<AddImageScreen>
                                   width: isMobile ? 220 : 320,
                                   height: isMobile ? 220 : 320,
                                   decoration: BoxDecoration(
-                                    color: Colors.white.withAlpha(179),
+                                    color: Colors.white.withOpacity(0.7),
                                     borderRadius: BorderRadius.circular(28),
-                                    boxShadow: const [
+                                    boxShadow: [
                                       BoxShadow(
                                         color: Colors.black12,
                                         blurRadius: 16,
@@ -331,9 +333,9 @@ class _AddImageScreenState extends State<AddImageScreen>
                   width: isMobile ? 280 : 400,
                   height: isMobile ? 200 : 240,
                   decoration: BoxDecoration(
-                    color: Colors.white.withAlpha(179),
+                    color: Colors.white,
                     borderRadius: BorderRadius.circular(28),
-                    boxShadow: const [
+                    boxShadow: [
                       BoxShadow(
                         color: Colors.black12,
                         blurRadius: 16,
@@ -341,73 +343,63 @@ class _AddImageScreenState extends State<AddImageScreen>
                       ),
                     ],
                   ),
-                  child: _isLoadingLocation
-                      ? const Center(
-                          child: CircularProgressIndicator(),
-                        )
-                      : _initialMapCenter == null
-                          ? const Center(
-                              child: Text('Could not get location'),
-                            )
-                          : Stack(
-                              children: [
-                                ClipRRect(
-                                  borderRadius: BorderRadius.circular(28),
-                                  child: GoogleMap(
-                                    initialCameraPosition: CameraPosition(
-                                      target: _initialMapCenter!,
-                                      zoom: 15,
-                                    ),
-                                    onMapCreated: (controller) {},
-                                    onCameraMove: (position) {
-                                      setState(() {
-                                        _pickedLocation = position.target;
-                                      });
-                                    },
-                                    markers: _pickedLocation == null
-                                        ? {}
-                                        : {
-                                            Marker(
-                                              markerId: const MarkerId('picked'),
-                                              position: _pickedLocation!,
-                                            ),
-                                          },
-                                    myLocationButtonEnabled: true,
-                                    myLocationEnabled: true,
+                  child: Stack(
+                    children: [
+                      ClipRRect(
+                        borderRadius: BorderRadius.circular(28),
+                        child: GoogleMap(
+                          initialCameraPosition: CameraPosition(
+                            target: _pickedLocation ?? _initialMapCenter ?? const LatLng(28.6139, 77.2090),
+                            zoom: 15,
+                          ),
+                          onMapCreated: (controller) => _mapController = controller,
+                          onCameraMove: (position) {
+                            setState(() {
+                              _pickedLocation = position.target;
+                            });
+                          },
+                          markers: _pickedLocation == null
+                              ? {}
+                              : {
+                                  Marker(
+                                    markerId: const MarkerId('picked'),
+                                    position: _pickedLocation!,
                                   ),
-                                ),
-                                Positioned(
-                                  bottom: 12,
-                                  right: 12,
-                                  child: ElevatedButton.icon(
-                                    onPressed: () {
-                                      // Pin is always at center, so nothing to do
-                                    },
-                                    icon: const Icon(Icons.place),
-                                    label: const Text('Pin Here'),
-                                    style: ElevatedButton.styleFrom(
-                                      backgroundColor:
-                                          Theme.of(context).colorScheme.primary,
-                                      foregroundColor: Colors.white,
-                                      shape: RoundedRectangleBorder(
-                                        borderRadius: BorderRadius.circular(16),
-                                      ),
-                                    ),
-                                  ),
-                                ),
-                              ],
+                                },
+                          myLocationButtonEnabled: true,
+                          myLocationEnabled: true,
+                        ),
+                      ),
+                      Positioned(
+                        bottom: 12,
+                        right: 12,
+                        child: ElevatedButton.icon(
+                          onPressed: () {
+                            // Pin is always at center, so nothing to do
+                          },
+                          icon: const Icon(Icons.place),
+                          label: const Text('Pin Here'),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Theme.of(context).colorScheme.primary,
+                            foregroundColor: Colors.white,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(16),
                             ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
                 const SizedBox(height: 28),
                 // Animal Type Detection
                 if (_detectedAnimalType != null)
                   Container(
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                     decoration: BoxDecoration(
-                      color: Colors.white.withAlpha(179),
+                      color: Colors.white,
                       borderRadius: BorderRadius.circular(16),
-                      boxShadow: const [
+                      boxShadow: [
                         BoxShadow(
                           color: Colors.black12,
                           blurRadius: 16,
@@ -418,8 +410,7 @@ class _AddImageScreenState extends State<AddImageScreen>
                     child: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        Icon(Icons.pets,
-                            color: Theme.of(context).colorScheme.primary),
+                        Icon(Icons.pets, color: Theme.of(context).colorScheme.primary),
                         const SizedBox(width: 8),
                         Text(
                           'Detected: $_detectedAnimalType',
@@ -465,18 +456,14 @@ class _AddImageScreenState extends State<AddImageScreen>
                             }
                           });
                         },
-                        backgroundColor: Colors.white.withAlpha(179),
-                        selectedColor: Theme.of(context)
-                            .colorScheme
-                            .primary
-                            .withAlpha(51),
+                        backgroundColor: Colors.white.withOpacity(0.7),
+                        selectedColor: Theme.of(context).colorScheme.primary.withOpacity(0.2),
                         checkmarkColor: Theme.of(context).colorScheme.primary,
                         labelStyle: TextStyle(
                           color: isSelected
                               ? Theme.of(context).colorScheme.primary
                               : Colors.black,
-                          fontWeight:
-                              isSelected ? FontWeight.bold : FontWeight.normal,
+                          fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
                         ),
                       );
                     }),
@@ -494,18 +481,14 @@ class _AddImageScreenState extends State<AddImageScreen>
                             }
                           });
                         },
-                        backgroundColor: Colors.white.withAlpha(179),
-                        selectedColor: Theme.of(context)
-                            .colorScheme
-                            .primary
-                            .withAlpha(51),
+                        backgroundColor: Colors.white.withOpacity(0.7),
+                        selectedColor: Theme.of(context).colorScheme.primary.withOpacity(0.2),
                         checkmarkColor: Theme.of(context).colorScheme.primary,
                         labelStyle: TextStyle(
                           color: isSelected
                               ? Theme.of(context).colorScheme.primary
                               : Colors.black,
-                          fontWeight:
-                              isSelected ? FontWeight.bold : FontWeight.normal,
+                          fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
                         ),
                       );
                     }),
@@ -519,15 +502,29 @@ class _AddImageScreenState extends State<AddImageScreen>
                   ],
                 ),
                 const SizedBox(height: 24),
-                // Description Field
+                // Description
+                Align(
+                  alignment: Alignment.centerLeft,
+                  child: Padding(
+                    padding: const EdgeInsets.only(left: 4.0, bottom: 8),
+                    child: Text(
+                      'Description',
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        color: Colors.deepPurple[300],
+                        fontSize: 16,
+                      ),
+                    ),
+                  ),
+                ),
                 Container(
                   margin: const EdgeInsets.symmetric(vertical: 8),
                   padding: const EdgeInsets.all(8),
                   decoration: BoxDecoration(
-                    color: Colors.white.withAlpha(230),
+                    color: Colors.white.withOpacity(0.9),
                     borderRadius: BorderRadius.circular(12),
                     border: Border.all(
-                      color: Colors.deepPurple.withAlpha(51),
+                      color: Colors.deepPurple.withOpacity(0.2),
                       width: 1.2,
                     ),
                   ),
@@ -567,8 +564,6 @@ class _AddImageScreenState extends State<AddImageScreen>
                   ),
                 ),
                 const SizedBox(height: 32),
-                // Add extra padding at the bottom to account for the navigation bar
-                SizedBox(height: MediaQuery.of(context).padding.bottom + 80),
               ],
             ),
           ),
@@ -584,19 +579,19 @@ class _AddImageScreenState extends State<AddImageScreen>
       width: boxWidth,
       height: boxHeight,
       decoration: BoxDecoration(
-        color: Colors.white.withAlpha(77),
+        color: Colors.white.withOpacity(0.3),
         borderRadius: BorderRadius.circular(24),
         border: Border.all(
-          color: Theme.of(context).colorScheme.primary.withAlpha(128),
+          color: Theme.of(context).colorScheme.primary.withOpacity(0.5),
           width: 2,
           style: BorderStyle.solid,
         ),
       ),
       child: DottedBorder(
         borderType: BorderType.RRect,
-        radius: const Radius.circular(24),
-        dashPattern: const [8, 6],
-        color: Theme.of(context).colorScheme.primary.withAlpha(128),
+        radius: Radius.circular(24),
+        dashPattern: [8, 6],
+        color: Theme.of(context).colorScheme.primary.withOpacity(0.5),
         strokeWidth: 2,
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
