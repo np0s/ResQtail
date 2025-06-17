@@ -7,6 +7,7 @@ import 'package:url_launcher/url_launcher.dart';
 import 'dart:io';
 import '../services/report_service.dart';
 import '../models/report.dart';
+import 'report_details_screen.dart';
 
 class MapScreen extends StatefulWidget {
   const MapScreen({Key? key}) : super(key: key);
@@ -30,6 +31,7 @@ class _MapScreenState extends State<MapScreen>
   void initState() {
     super.initState();
     _getCurrentLocation();
+    context.read<ReportService>().loadReports();
     _animationController = AnimationController(
       duration: const Duration(milliseconds: 300),
       vsync: this,
@@ -268,11 +270,11 @@ class _MapScreenState extends State<MapScreen>
                           Row(
                             children: [
                               ClipRRect(
-                                borderRadius: BorderRadius.circular(8),
+                                borderRadius: BorderRadius.circular(12),
                                 child: Image.file(
                                   File(_selectedReport!.imagePath),
-                                  width: 80,
-                                  height: 80,
+                                  width: 64,
+                                  height: 64,
                                   fit: BoxFit.cover,
                                 ),
                               ),
@@ -290,13 +292,37 @@ class _MapScreenState extends State<MapScreen>
                                       ),
                                     ),
                                     const SizedBox(height: 4),
+                                    if (_selectedReport!.tags.isNotEmpty)
+                                      Container(
+                                        padding: const EdgeInsets.symmetric(
+                                          horizontal: 10,
+                                          vertical: 4,
+                                        ),
+                                        decoration: BoxDecoration(
+                                          color: Theme.of(context)
+                                              .colorScheme
+                                              .primary
+                                              .withOpacity(0.1),
+                                          borderRadius:
+                                              BorderRadius.circular(16),
+                                        ),
+                                        child: Text(
+                                          _selectedReport!.tags.first,
+                                          style: TextStyle(
+                                            color: Theme.of(context)
+                                                .colorScheme
+                                                .primary,
+                                            fontSize: 12,
+                                            fontWeight: FontWeight.w500,
+                                          ),
+                                        ),
+                                      ),
+                                    const SizedBox(height: 4),
                                     Text(
-                                      _selectedReport!.timestamp
-                                          .toString()
-                                          .split('.')[0],
+                                      _formatDate(_selectedReport!.timestamp),
                                       style: TextStyle(
                                         color: Colors.grey[600],
-                                        fontSize: 14,
+                                        fontSize: 12,
                                       ),
                                     ),
                                   ],
@@ -309,17 +335,24 @@ class _MapScreenState extends State<MapScreen>
                             ],
                           ),
                           const SizedBox(height: 16),
-                          ElevatedButton.icon(
-                            onPressed: () {
-                              // Open in maps functionality
-                              _openInMaps(_selectedReport!.location);
-                            },
-                            icon: const Icon(Icons.map),
-                            label: const Text('Help (Open in Maps)'),
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor:
-                                  Theme.of(context).colorScheme.primary,
-                              foregroundColor: Colors.white,
+                          Center(
+                            child: ElevatedButton.icon(
+                              onPressed: () {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (context) => ReportDetailsScreen(
+                                        report: _selectedReport!),
+                                  ),
+                                );
+                              },
+                              icon: const Icon(Icons.visibility),
+                              label: const Text('View Details'),
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor:
+                                    Theme.of(context).colorScheme.primary,
+                                foregroundColor: Colors.white,
+                              ),
                             ),
                           ),
                         ],
@@ -339,5 +372,10 @@ class _MapScreenState extends State<MapScreen>
     _mapController?.dispose();
     _animationController.dispose();
     super.dispose();
+  }
+
+  String _formatDate(DateTime date) {
+    return "${date.year.toString().padLeft(4, '0')}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')} "
+        "${date.hour.toString().padLeft(2, '0')}:${date.minute.toString().padLeft(2, '0')}:${date.second.toString().padLeft(2, '0')}";
   }
 }
