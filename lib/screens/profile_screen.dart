@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import '../services/auth_service.dart';
 import '../services/report_service.dart';
 import 'dart:io';
+import 'package:image_picker/image_picker.dart';
 import 'report_details_screen.dart';
 
 class ProfileScreen extends StatefulWidget {
@@ -16,6 +17,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
   late TextEditingController _usernameController;
   bool _isEditingUsername = false;
   String? _username;
+  final ImagePicker _picker = ImagePicker();
 
   @override
   void initState() {
@@ -25,6 +27,17 @@ class _ProfileScreenState extends State<ProfileScreen> {
     final userEmail = authService.email ?? '';
     _username = userEmail.split('@')[0];
     _usernameController = TextEditingController(text: _username);
+  }
+
+  Future<void> _pickImage() async {
+    final XFile? image = await _picker.pickImage(source: ImageSource.gallery);
+    if (image != null) {
+      await context.read<AuthService>().setProfileImagePath(image.path);
+    }
+  }
+
+  Future<void> _deleteProfilePicture() async {
+    await context.read<AuthService>().setProfileImagePath('');
   }
 
   @override
@@ -42,6 +55,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     final userReports =
         userId != null ? reportService.getUserReports(userId) : [];
     final username = _username ?? userEmail.split('@')[0];
+    final profileImagePath = authService.profileImagePath;
 
     return Container(
       width: double.infinity,
@@ -66,11 +80,79 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   Expanded(
                     child: Row(
                       children: [
-                        CircleAvatar(
-                          radius: 24,
-                          backgroundColor: Colors.deepPurple[100],
-                          child: Icon(Icons.person,
-                              color: Colors.deepPurple, size: 32),
+                        GestureDetector(
+                          onTap: () {
+                            showModalBottomSheet(
+                              context: context,
+                              builder: (BuildContext context) {
+                                return SafeArea(
+                                  child: Column(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      ListTile(
+                                        leading: const Icon(Icons.camera_alt),
+                                        title: const Text(
+                                            'Change Profile Picture'),
+                                        onTap: () {
+                                          Navigator.pop(context);
+                                          _pickImage();
+                                        },
+                                      ),
+                                      if (profileImagePath != null &&
+                                          profileImagePath.isNotEmpty)
+                                        ListTile(
+                                          leading:
+                                              const Icon(Icons.delete_outline),
+                                          title: const Text(
+                                              'Delete Profile Picture'),
+                                          onTap: () {
+                                            Navigator.pop(context);
+                                            _deleteProfilePicture();
+                                          },
+                                        ),
+                                    ],
+                                  ),
+                                );
+                              },
+                            );
+                          },
+                          child: Stack(
+                            children: [
+                              CircleAvatar(
+                                radius: 24,
+                                backgroundColor: Colors.deepPurple[100],
+                                backgroundImage: profileImagePath != null &&
+                                        profileImagePath.isNotEmpty
+                                    ? FileImage(File(profileImagePath))
+                                    : null,
+                                child: profileImagePath == null ||
+                                        profileImagePath.isEmpty
+                                    ? Icon(Icons.person,
+                                        color: Colors.deepPurple, size: 32)
+                                    : null,
+                              ),
+                              Positioned(
+                                right: 0,
+                                bottom: 0,
+                                child: Container(
+                                  padding: const EdgeInsets.all(4),
+                                  decoration: BoxDecoration(
+                                    color: Colors.deepPurple,
+                                    shape: BoxShape.circle,
+                                    border: Border.all(
+                                      color: Colors.white,
+                                      width: 2,
+                                    ),
+                                  ),
+                                  child: const Icon(
+                                    Icons.camera_alt,
+                                    color: Colors.white,
+                                    size: 16,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
                         ),
                         const SizedBox(width: 12),
                         Expanded(
