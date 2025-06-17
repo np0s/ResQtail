@@ -2,6 +2,9 @@ import 'package:flutter/material.dart';
 import 'map_screen.dart'; // Import the MapScreen
 import 'profile_screen.dart'; // Import the ProfileScreen
 import 'add_image_screen.dart'; // Import the AddImageScreen
+import 'package:provider/provider.dart';
+import '../services/auth_service.dart';
+import 'dart:io';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({Key? key}) : super(key: key);
@@ -148,9 +151,19 @@ class _HomeScreenState extends State<HomeScreen>
               onTap: () => _onItemTapped(2),
               child: CircleAvatar(
                 radius: 20,
-                backgroundImage: const NetworkImage(
-                  'https://upload.wikimedia.org/wikipedia/commons/7/70/User_icon_BLACK-01.png', // General PNG placeholder image
-                ),
+                backgroundImage: context
+                                .watch<AuthService>()
+                                .profileImagePath !=
+                            null &&
+                        context
+                            .watch<AuthService>()
+                            .profileImagePath!
+                            .isNotEmpty
+                    ? FileImage(
+                        File(context.watch<AuthService>().profileImagePath!))
+                    : const NetworkImage(
+                        'https://upload.wikimedia.org/wikipedia/commons/7/70/User_icon_BLACK-01.png',
+                      ) as ImageProvider,
                 backgroundColor: Colors.grey[200],
                 child: _selectedIndex == 2
                     ? Container(
