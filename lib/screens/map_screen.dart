@@ -315,7 +315,7 @@ class _MapScreenState extends State<MapScreen>
                               _openInMaps(_selectedReport!.location);
                             },
                             icon: const Icon(Icons.map),
-                            label: const Text('Open in Maps'),
+                            label: const Text('Help (Open in Maps)'),
                             style: ElevatedButton.styleFrom(
                               backgroundColor:
                                   Theme.of(context).colorScheme.primary,
