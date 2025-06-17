@@ -34,7 +34,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
     if (image != null) {
       await context.read<AuthService>().setProfileImagePath(image.path);
     }
-  }
 
   Future<void> _deleteProfilePicture() async {
     await context.read<AuthService>().setProfileImagePath('');
