@@ -10,6 +10,7 @@ import 'package:flutter/gestures.dart';
 import 'package:flutter/foundation.dart';
 import '../services/auth_service.dart';
 import '../services/report_service.dart';
+import '../services/animal_detection_service.dart';
 import '../models/report.dart';
 
 class AddImageScreen extends StatefulWidget {
@@ -40,6 +41,8 @@ class _AddImageScreenState extends State<AddImageScreen>
   LatLng? _initialMapCenter;
   double _cameraCardScale = 1.0;
   final List<String> _customTags = [];
+  final AnimalDetectionService _animalDetectionService = AnimalDetectionService();
+  bool _isDetecting = false;
 
   @override
   void initState() {
@@ -53,6 +56,7 @@ class _AddImageScreenState extends State<AddImageScreen>
       curve: Curves.easeInOut,
     );
     _setInitialLocation();
+    _animalDetectionService.initialize();
   }
 
   Future<void> _setInitialLocation() async {
@@ -143,9 +147,19 @@ class _AddImageScreenState extends State<AddImageScreen>
     if (pickedFile != null) {
       setState(() {
         _image = File(pickedFile.path);
-        _detectedAnimalType = 'Enter animal type'; // Default text
+        _detectedAnimalType = 'Detecting animal...';
+        _isDetecting = true;
       });
       _animController.forward(from: 0);
+
+      // Detect animal in the image
+      final detectedAnimal = await _animalDetectionService.detectAnimal(_image!);
+      if (mounted) {
+        setState(() {
+          _detectedAnimalType = detectedAnimal ?? 'Unknown Animal';
+          _isDetecting = false;
+        });
+      }
     }
   }
 
@@ -304,6 +318,7 @@ class _AddImageScreenState extends State<AddImageScreen>
   void dispose() {
     _animController.dispose();
     _descriptionController.dispose();
+    _animalDetectionService.dispose();
     super.dispose();
   }
 
@@ -644,13 +659,22 @@ class _AddImageScreenState extends State<AddImageScreen>
                           color: Theme.of(context).colorScheme.primary,
                         ),
                         const SizedBox(width: 8),
-                        Text(
-                          _detectedAnimalType!,
-                          style: const TextStyle(
-                            fontWeight: FontWeight.bold,
-                            fontSize: 16,
+                        if (_isDetecting)
+                          const SizedBox(
+                            width: 20,
+                            height: 20,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                            ),
+                          )
+                        else
+                          Text(
+                            _detectedAnimalType!,
+                            style: const TextStyle(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 16,
+                            ),
                           ),
-                        ),
                         const SizedBox(width: 8),
                         IconButton(
                           icon: const Icon(Icons.edit, size: 20),
