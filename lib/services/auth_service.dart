@@ -11,6 +11,8 @@ class AuthService extends ChangeNotifier {
   bool _isLoggedIn = false;
   String? _userId;
   String? _email;
+  String? _phoneNumber;
+  bool _showPhoneNumber = false;
   bool _isEmailVerified = false;
   String? _verificationCode;
   DateTime? _verificationCodeExpiry;
@@ -27,6 +29,8 @@ class AuthService extends ChangeNotifier {
   bool get isLoggedIn => _isLoggedIn;
   String? get userId => _userId;
   String? get email => _email;
+  String? get phoneNumber => _phoneNumber;
+  bool get showPhoneNumber => _showPhoneNumber;
   bool get isEmailVerified => _isEmailVerified;
   String? get profileImagePath => _profileImagePath;
 
@@ -62,6 +66,8 @@ class AuthService extends ChangeNotifier {
     _isLoggedIn = prefs.getBool('isLoggedIn') ?? false;
     _userId = prefs.getString('userId');
     _email = prefs.getString('email');
+    _phoneNumber = prefs.getString('phoneNumber');
+    _showPhoneNumber = prefs.getBool('showPhoneNumber') ?? false;
     _isEmailVerified = prefs.getBool('isEmailVerified') ?? false;
     _profileImagePath = prefs.getString('profileImagePath');
     notifyListeners();
@@ -77,7 +83,8 @@ class AuthService extends ChangeNotifier {
     return const Uuid().v4().substring(0, 6).toUpperCase();
   }
 
-  Future<bool> register(String email, String password) async {
+  Future<bool> register(
+      String email, String password, String phoneNumber) async {
     try {
       // Check if user already exists
       final users = await _loadUsers();
@@ -109,6 +116,8 @@ class AuthService extends ChangeNotifier {
       users[email] = {
         'userId': userId,
         'password': hashedPassword,
+        'phoneNumber': phoneNumber,
+        'showPhoneNumber': false,
         'isEmailVerified': false,
         'verificationCode': _verificationCode,
         'verificationCodeExpiry': _verificationCodeExpiry!.toIso8601String(),
@@ -120,6 +129,8 @@ class AuthService extends ChangeNotifier {
       final prefs = await SharedPreferences.getInstance();
       await prefs.setString('userId', userId);
       await prefs.setString('email', email);
+      await prefs.setString('phoneNumber', phoneNumber);
+      await prefs.setBool('showPhoneNumber', false);
       await prefs.setString('password', hashedPassword);
       await prefs.setBool('isEmailVerified', false);
       await prefs.setString('verificationCode', _verificationCode!);
@@ -129,6 +140,8 @@ class AuthService extends ChangeNotifier {
 
       _userId = userId;
       _email = email;
+      _phoneNumber = phoneNumber;
+      _showPhoneNumber = false;
       _isEmailVerified = false;
       _profileImagePath = null;
       notifyListeners();
@@ -190,6 +203,9 @@ class AuthService extends ChangeNotifier {
       await prefs.setBool('isLoggedIn', true);
       await prefs.setString('userId', userData['userId']);
       await prefs.setString('email', email);
+      await prefs.setString('phoneNumber', userData['phoneNumber']);
+      await prefs.setBool(
+          'showPhoneNumber', userData['showPhoneNumber'] ?? false);
       await prefs.setBool('isEmailVerified', true);
       await prefs.setString(
           'profileImagePath', userData['profileImagePath'] ?? '');
@@ -197,6 +213,8 @@ class AuthService extends ChangeNotifier {
       _isLoggedIn = true;
       _userId = userData['userId'];
       _email = email;
+      _phoneNumber = userData['phoneNumber'];
+      _showPhoneNumber = userData['showPhoneNumber'] ?? false;
       _isEmailVerified = true;
       _profileImagePath = userData['profileImagePath'];
       notifyListeners();
@@ -215,6 +233,8 @@ class AuthService extends ChangeNotifier {
     _isLoggedIn = false;
     _userId = null;
     _email = null;
+    _phoneNumber = null;
+    _showPhoneNumber = false;
     _profileImagePath = null;
     notifyListeners();
     debugPrint('User logged out successfully');
@@ -231,6 +251,34 @@ class AuthService extends ChangeNotifier {
     // Update local preferences
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString('profileImagePath', path);
+    notifyListeners();
+  }
+
+  Future<void> togglePhoneNumberVisibility(bool show) async {
+    _showPhoneNumber = show;
+    // Update users file
+    final users = await _loadUsers();
+    if (_email != null && users.containsKey(_email)) {
+      users[_email]!['showPhoneNumber'] = show;
+      await _saveUsers(users);
+    }
+    // Update local preferences
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool('showPhoneNumber', show);
+    notifyListeners();
+  }
+
+  Future<void> updatePhoneNumber(String phoneNumber) async {
+    _phoneNumber = phoneNumber;
+    // Update users file
+    final users = await _loadUsers();
+    if (_email != null && users.containsKey(_email)) {
+      users[_email]!['phoneNumber'] = phoneNumber;
+      await _saveUsers(users);
+    }
+    // Update local preferences
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString('phoneNumber', phoneNumber);
     notifyListeners();
   }
 }

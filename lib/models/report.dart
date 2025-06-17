@@ -9,6 +9,7 @@ class Report {
   final String? detectedAnimalType;
   final LatLng location;
   final DateTime timestamp;
+  final bool isHelped;
 
   Report({
     required this.id,
@@ -19,6 +20,7 @@ class Report {
     this.detectedAnimalType,
     required this.location,
     required this.timestamp,
+    this.isHelped = false,
   });
 
   Map<String, dynamic> toJson() {
@@ -34,6 +36,7 @@ class Report {
         'longitude': location.longitude,
       },
       'timestamp': timestamp.toIso8601String(),
+      'isHelped': isHelped,
     };
   }
 
@@ -50,6 +53,7 @@ class Report {
         json['location']['longitude'],
       ),
       timestamp: DateTime.parse(json['timestamp']),
+      isHelped: json['isHelped'] ?? false,
     );
   }
 }
