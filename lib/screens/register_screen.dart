@@ -9,11 +9,13 @@ class RegisterScreen extends StatefulWidget {
   State<RegisterScreen> createState() => _RegisterScreenState();
 }
 
-class _RegisterScreenState extends State<RegisterScreen> with SingleTickerProviderStateMixin {
+class _RegisterScreenState extends State<RegisterScreen>
+    with SingleTickerProviderStateMixin {
   final _formKey = GlobalKey<FormState>();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   final _confirmPasswordController = TextEditingController();
+  final _phoneController = TextEditingController();
   bool _isLoading = false;
   bool _obscurePassword = true;
   bool _obscureConfirmPassword = true;
@@ -41,6 +43,7 @@ class _RegisterScreenState extends State<RegisterScreen> with SingleTickerProvid
     _emailController.dispose();
     _passwordController.dispose();
     _confirmPasswordController.dispose();
+    _phoneController.dispose();
     _animationController.dispose();
     super.dispose();
   }
@@ -55,11 +58,13 @@ class _RegisterScreenState extends State<RegisterScreen> with SingleTickerProvid
       final success = await authService.register(
         _emailController.text,
         _passwordController.text,
+        _phoneController.text,
       );
 
       if (!success && mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Registration failed. Please try again.')),
+          const SnackBar(
+              content: Text('Registration failed. Please try again.')),
         );
       } else if (mounted) {
         Navigator.pushReplacementNamed(context, '/verify');
@@ -121,7 +126,10 @@ class _RegisterScreenState extends State<RegisterScreen> with SingleTickerProvid
                             'Sign up to get started (Dummy)',
                             style: TextStyle(
                               fontSize: 16,
-                              color: Theme.of(context).colorScheme.onSurface.withAlpha(179),
+                              color: Theme.of(context)
+                                  .colorScheme
+                                  .onSurface
+                                  .withAlpha(179),
                             ),
                           ),
                           const SizedBox(height: 32),
@@ -153,6 +161,30 @@ class _RegisterScreenState extends State<RegisterScreen> with SingleTickerProvid
                           ),
                           const SizedBox(height: 16),
                           TextFormField(
+                            controller: _phoneController,
+                            decoration: InputDecoration(
+                              labelText: 'Phone Number',
+                              prefixIcon: const Icon(Icons.phone),
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              enabledBorder: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(12),
+                                borderSide: BorderSide(
+                                  color: Theme.of(context).colorScheme.outline,
+                                ),
+                              ),
+                            ),
+                            keyboardType: TextInputType.phone,
+                            validator: (value) {
+                              if (value == null || value.isEmpty) {
+                                return 'Please enter your phone number';
+                              }
+                              return null;
+                            },
+                          ),
+                          const SizedBox(height: 16),
+                          TextFormField(
                             controller: _passwordController,
                             decoration: InputDecoration(
                               labelText: 'Password',
@@ -160,8 +192,8 @@ class _RegisterScreenState extends State<RegisterScreen> with SingleTickerProvid
                               suffixIcon: IconButton(
                                 icon: Icon(
                                   _obscurePassword
-                                      ? Icons.visibility_outlined
-                                      : Icons.visibility_off_outlined,
+                                      ? Icons.visibility_off_outlined
+                                      : Icons.visibility_outlined,
                                 ),
                                 onPressed: () {
                                   setState(() {
@@ -199,12 +231,13 @@ class _RegisterScreenState extends State<RegisterScreen> with SingleTickerProvid
                               suffixIcon: IconButton(
                                 icon: Icon(
                                   _obscureConfirmPassword
-                                      ? Icons.visibility_outlined
-                                      : Icons.visibility_off_outlined,
+                                      ? Icons.visibility_off_outlined
+                                      : Icons.visibility_outlined,
                                 ),
                                 onPressed: () {
                                   setState(() {
-                                    _obscureConfirmPassword = !_obscureConfirmPassword;
+                                    _obscureConfirmPassword =
+                                        !_obscureConfirmPassword;
                                   });
                                 },
                               ),
@@ -273,4 +306,4 @@ class _RegisterScreenState extends State<RegisterScreen> with SingleTickerProvid
       ),
     );
   }
-} 
+}
