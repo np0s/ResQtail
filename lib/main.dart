@@ -13,7 +13,6 @@ import 'screens/home_screen.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   
-  // Load environment variables
   await dotenv.load(fileName: ".env");
   
   await ConfigService.init();

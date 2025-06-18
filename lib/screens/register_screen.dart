@@ -176,9 +176,13 @@ class _RegisterScreenState extends State<RegisterScreen>
                               ),
                             ),
                             keyboardType: TextInputType.phone,
+                            maxLength: 10,
                             validator: (value) {
                               if (value == null || value.isEmpty) {
                                 return 'Please enter your phone number';
+                              }
+                              if (!RegExp(r'^[6-9]\d{9}$').hasMatch(value)) {
+                                return 'Enter a valid 10-digit Indian phone number';
                               }
                               return null;
                             },
