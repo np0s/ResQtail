@@ -101,8 +101,9 @@ class _MapScreenState extends State<MapScreen>
               snippet: 'You are here',
             ),
             icon: BitmapDescriptor.defaultMarkerWithHue(
-              BitmapDescriptor.hueBlue,
+              BitmapDescriptor.hueRed,
             ),
+            alpha: 0.7,
           ),
         );
       });
