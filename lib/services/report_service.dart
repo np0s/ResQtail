@@ -8,9 +8,12 @@ class ReportService extends ChangeNotifier {
   static const String _reportsFileName = 'reports.json';
   List<Report> _reports = [];
 
-  List<Report> get reports => _reports;
+  List<Report> get reports =>
+      _reports.where((report) => !report.isHelped).toList();
   List<Report> getUserReports(String userId) {
-    return _reports.where((report) => report.userId == userId).toList();
+    return _reports
+        .where((report) => report.userId == userId && !report.isHelped)
+        .toList();
   }
 
   Future<String> get _reportsFilePath async {
@@ -52,5 +55,25 @@ class ReportService extends ChangeNotifier {
     _reports.removeWhere((report) => report.id == reportId);
     await saveReports();
     notifyListeners();
+  }
+
+  Future<void> markReportAsHelped(String reportId) async {
+    final index = _reports.indexWhere((report) => report.id == reportId);
+    if (index != -1) {
+      final report = _reports[index];
+      _reports[index] = Report(
+        id: report.id,
+        userId: report.userId,
+        imagePath: report.imagePath,
+        description: report.description,
+        tags: report.tags,
+        detectedAnimalType: report.detectedAnimalType,
+        location: report.location,
+        timestamp: report.timestamp,
+        isHelped: true,
+      );
+      await saveReports();
+      notifyListeners();
+    }
   }
 }

@@ -8,6 +8,7 @@ import 'dart:io';
 import '../services/report_service.dart';
 import '../models/report.dart';
 import 'report_details_screen.dart';
+import '../services/auth_service.dart';
 
 class MapScreen extends StatefulWidget {
   const MapScreen({Key? key}) : super(key: key);
@@ -353,6 +354,69 @@ class _MapScreenState extends State<MapScreen>
                                     Theme.of(context).colorScheme.primary,
                                 foregroundColor: Colors.white,
                               ),
+                            ),
+                          ),
+                          const SizedBox(height: 16),
+                          // Contact Information
+                          Container(
+                            padding: const EdgeInsets.all(12),
+                            decoration: BoxDecoration(
+                              color: Colors.white.withOpacity(0.7),
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: Column(
+                              children: [
+                                Row(
+                                  children: [
+                                    Icon(
+                                      Icons.email,
+                                      color: Colors.deepPurple.withOpacity(0.7),
+                                      size: 20,
+                                    ),
+                                    const SizedBox(width: 8),
+                                    Expanded(
+                                      child: Text(
+                                        context.read<AuthService>().email ??
+                                            'No email available',
+                                        style: TextStyle(
+                                          color: Colors.deepPurple
+                                              .withOpacity(0.7),
+                                          fontSize: 14,
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                                if (context
+                                    .read<AuthService>()
+                                    .showPhoneNumber) ...[
+                                  const SizedBox(height: 8),
+                                  Row(
+                                    children: [
+                                      Icon(
+                                        Icons.phone,
+                                        color:
+                                            Colors.deepPurple.withOpacity(0.7),
+                                        size: 20,
+                                      ),
+                                      const SizedBox(width: 8),
+                                      Expanded(
+                                        child: Text(
+                                          context
+                                                  .read<AuthService>()
+                                                  .phoneNumber ??
+                                              'No phone available',
+                                          style: TextStyle(
+                                            color: Colors.deepPurple
+                                                .withOpacity(0.7),
+                                            fontSize: 14,
+                                          ),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ],
+                              ],
                             ),
                           ),
                         ],

@@ -5,6 +5,7 @@ import '../services/report_service.dart';
 import 'dart:io';
 import 'package:image_picker/image_picker.dart';
 import 'report_details_screen.dart';
+import 'package:intl_phone_field/intl_phone_field.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({Key? key}) : super(key: key);
@@ -15,8 +16,12 @@ class ProfileScreen extends StatefulWidget {
 
 class _ProfileScreenState extends State<ProfileScreen> {
   late TextEditingController _usernameController;
+  TextEditingController? _phoneController;
   bool _isEditingUsername = false;
+  bool _isEditingPhone = false;
   String? _username;
+  String? _countryCode;
+  String? _phoneNumber;
   final ImagePicker _picker = ImagePicker();
 
   @override
@@ -27,6 +32,25 @@ class _ProfileScreenState extends State<ProfileScreen> {
     final userEmail = authService.email ?? '';
     _username = userEmail.split('@')[0];
     _usernameController = TextEditingController(text: _username);
+
+    // Parse existing phone number if available
+    final existingPhone = authService.phoneNumber;
+    if (existingPhone != null && existingPhone.isNotEmpty) {
+      if (existingPhone.startsWith('+')) {
+        final parts = existingPhone.split(' ');
+        if (parts.length > 1) {
+          _countryCode = parts[0];
+          _phoneNumber = parts[1];
+        }
+      }
+    }
+  }
+
+  @override
+  void dispose() {
+    _usernameController.dispose();
+    _phoneController?.dispose();
+    super.dispose();
   }
 
   Future<void> _pickImage() async {
@@ -41,12 +65,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   @override
-  void dispose() {
-    _usernameController.dispose();
-    super.dispose();
-  }
-
-  @override
   Widget build(BuildContext context) {
     final authService = context.watch<AuthService>();
     final reportService = context.watch<ReportService>();
@@ -56,6 +74,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
         userId != null ? reportService.getUserReports(userId) : [];
     final username = _username ?? userEmail.split('@')[0];
     final profileImagePath = authService.profileImagePath;
+
+    // Initialize phone controller if not already initialized
+    _phoneController ??= TextEditingController(text: _phoneNumber ?? '');
 
     return Container(
       width: double.infinity,
@@ -81,41 +102,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     child: Row(
                       children: [
                         GestureDetector(
-                          onTap: () {
-                            showModalBottomSheet(
-                              context: context,
-                              builder: (BuildContext context) {
-                                return SafeArea(
-                                  child: Column(
-                                    mainAxisSize: MainAxisSize.min,
-                                    children: [
-                                      ListTile(
-                                        leading: const Icon(Icons.camera_alt),
-                                        title: const Text(
-                                            'Change Profile Picture'),
-                                        onTap: () {
-                                          Navigator.pop(context);
-                                          _pickImage();
-                                        },
-                                      ),
-                                      if (profileImagePath != null &&
-                                          profileImagePath.isNotEmpty)
-                                        ListTile(
-                                          leading:
-                                              const Icon(Icons.delete_outline),
-                                          title: const Text(
-                                              'Delete Profile Picture'),
-                                          onTap: () {
-                                            Navigator.pop(context);
-                                            _deleteProfilePicture();
-                                          },
-                                        ),
-                                    ],
-                                  ),
-                                );
-                              },
-                            );
-                          },
+                          onTap: _pickImage,
                           child: Stack(
                             children: [
                               CircleAvatar(
@@ -197,11 +184,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                           child: Text(
                                             username,
                                             style: const TextStyle(
-                                              fontSize: 28,
+                                              fontSize: 24,
                                               fontWeight: FontWeight.bold,
                                               color: Colors.deepPurple,
                                             ),
-                                            overflow: TextOverflow.ellipsis,
                                           ),
                                         ),
                                         IconButton(
@@ -215,12 +201,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                         ),
                                       ],
                                     ),
-                              const SizedBox(height: 4),
                               Text(
                                 userEmail,
                                 style: TextStyle(
-                                  fontSize: 16,
                                   color: Colors.deepPurple.withOpacity(0.7),
+                                  fontSize: 14,
                                 ),
                               ),
                             ],
@@ -229,12 +214,25 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       ],
                     ),
                   ),
-                  IconButton(
-                    onPressed: () {
-                      context.read<AuthService>().logout();
-                    },
-                    icon: const Icon(Icons.logout, color: Colors.deepPurple),
-                    tooltip: 'Logout',
+                  Row(
+                    children: [
+                      if (profileImagePath != null &&
+                          profileImagePath.isNotEmpty)
+                        IconButton(
+                          icon: const Icon(Icons.delete_outline,
+                              color: Colors.deepPurple),
+                          onPressed: _deleteProfilePicture,
+                          tooltip: 'Delete profile picture',
+                        ),
+                      IconButton(
+                        icon:
+                            const Icon(Icons.logout, color: Colors.deepPurple),
+                        onPressed: () {
+                          context.read<AuthService>().logout();
+                        },
+                        tooltip: 'Logout',
+                      ),
+                    ],
                   ),
                 ],
               ),
@@ -250,6 +248,116 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       Colors.deepPurple.withOpacity(0.1),
                     ],
                   ),
+                ),
+              ),
+              const SizedBox(height: 24),
+              // Phone Number Visibility Toggle
+              Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: Colors.white.withOpacity(0.7),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      'Contact Information',
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.deepPurple,
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    Row(
+                      children: [
+                        Icon(
+                          Icons.phone,
+                          color: Colors.deepPurple.withOpacity(0.7),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: _isEditingPhone
+                              ? IntlPhoneField(
+                                  controller: _phoneController,
+                                  initialCountryCode:
+                                      _countryCode?.replaceAll('+', '') ?? 'IN',
+                                  onChanged: (phone) {
+                                    _countryCode = phone.countryCode;
+                                    _phoneNumber = phone.number;
+                                  },
+                                  decoration: const InputDecoration(
+                                    border: InputBorder.none,
+                                    isDense: true,
+                                    contentPadding: EdgeInsets.zero,
+                                  ),
+                                  style: const TextStyle(
+                                    fontSize: 16,
+                                    color: Colors.deepPurple,
+                                  ),
+                                )
+                              : Text(
+                                  authService.phoneNumber ?? 'No phone number',
+                                  style: TextStyle(
+                                    color: Colors.deepPurple.withOpacity(0.7),
+                                    fontSize: 16,
+                                  ),
+                                ),
+                        ),
+                        if (!_isEditingPhone)
+                          IconButton(
+                            icon: const Icon(Icons.edit,
+                                color: Colors.deepPurple),
+                            onPressed: () {
+                              setState(() {
+                                _isEditingPhone = true;
+                                _phoneController?.text = _phoneNumber ?? '';
+                              });
+                            },
+                          )
+                        else
+                          IconButton(
+                            icon: const Icon(Icons.check,
+                                color: Colors.deepPurple),
+                            onPressed: () async {
+                              if (_countryCode != null &&
+                                  _phoneNumber != null) {
+                                final fullPhoneNumber =
+                                    '$_countryCode $_phoneNumber';
+                                await authService
+                                    .updatePhoneNumber(fullPhoneNumber);
+                              }
+                              setState(() {
+                                _isEditingPhone = false;
+                              });
+                            },
+                          ),
+                      ],
+                    ),
+                    const SizedBox(height: 16),
+                    Row(
+                      children: [
+                        const Text(
+                          'Show phone number in reports',
+                          style: TextStyle(
+                            fontSize: 16,
+                            color: Colors.deepPurple,
+                          ),
+                        ),
+                        const Spacer(),
+                        Switch(
+                          value: authService.showPhoneNumber,
+                          onChanged: (value) {
+                            context
+                                .read<AuthService>()
+                                .togglePhoneNumberVisibility(value);
+                          },
+                          activeColor: Colors.deepPurple,
+                        ),
+                      ],
+                    ),
+                  ],
                 ),
               ),
               const SizedBox(height: 24),
@@ -306,17 +414,16 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                   ),
                                 );
                               },
-                              borderRadius: BorderRadius.circular(16),
                               child: Padding(
-                                padding: const EdgeInsets.all(12.0),
+                                padding: const EdgeInsets.all(16),
                                 child: Row(
                                   children: [
                                     ClipRRect(
                                       borderRadius: BorderRadius.circular(12),
                                       child: Image.file(
                                         File(report.imagePath),
-                                        height: 64,
-                                        width: 64,
+                                        width: 80,
+                                        height: 80,
                                         fit: BoxFit.cover,
                                       ),
                                     ),

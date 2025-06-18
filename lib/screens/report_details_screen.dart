@@ -3,6 +3,9 @@ import 'dart:io';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../models/report.dart';
+import 'package:provider/provider.dart';
+import '../services/auth_service.dart';
+import '../services/report_service.dart';
 
 class ReportDetailsScreen extends StatelessWidget {
   final Report report;
@@ -22,6 +25,10 @@ class ReportDetailsScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final authService = context.watch<AuthService>();
+    final reportService = context.watch<ReportService>();
+    final isAuthor = authService.userId == report.userId;
+
     return Scaffold(
       body: Container(
         decoration: const BoxDecoration(
@@ -177,7 +184,7 @@ class ReportDetailsScreen extends StatelessWidget {
                         child: ElevatedButton.icon(
                           onPressed: () => _openInMaps(report.location),
                           icon: const Icon(Icons.map),
-                          label: const Text('Help (Open in Maps)'),
+                          label: const Text('Open in Maps'),
                           style: ElevatedButton.styleFrom(
                             backgroundColor:
                                 Theme.of(context).colorScheme.primary,
@@ -190,6 +197,65 @@ class ReportDetailsScreen extends StatelessWidget {
                               borderRadius: BorderRadius.circular(12),
                             ),
                           ),
+                        ),
+                      ),
+                      const SizedBox(height: 24),
+                      // Contact Information
+                      const Text(
+                        'Contact Information',
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.deepPurple,
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                      Container(
+                        padding: const EdgeInsets.all(16),
+                        decoration: BoxDecoration(
+                          color: Colors.white.withOpacity(0.7),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              children: [
+                                Icon(
+                                  Icons.email,
+                                  color: Colors.deepPurple.withOpacity(0.7),
+                                ),
+                                const SizedBox(width: 12),
+                                Text(
+                                  authService.email ?? 'No email available',
+                                  style: TextStyle(
+                                    color: Colors.deepPurple.withOpacity(0.7),
+                                    fontSize: 16,
+                                  ),
+                                ),
+                              ],
+                            ),
+                            if (authService.showPhoneNumber) ...[
+                              const SizedBox(height: 12),
+                              Row(
+                                children: [
+                                  Icon(
+                                    Icons.phone,
+                                    color: Colors.deepPurple.withOpacity(0.7),
+                                  ),
+                                  const SizedBox(width: 12),
+                                  Text(
+                                    authService.phoneNumber ??
+                                        'No phone available',
+                                    style: TextStyle(
+                                      color: Colors.deepPurple.withOpacity(0.7),
+                                      fontSize: 16,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ],
+                          ],
                         ),
                       ),
                       const SizedBox(height: 24),
@@ -217,6 +283,32 @@ class ReportDetailsScreen extends StatelessWidget {
                           ],
                         ),
                       ),
+                      if (isAuthor && !report.isHelped) ...[
+                        const SizedBox(height: 24),
+                        Center(
+                          child: ElevatedButton.icon(
+                            onPressed: () async {
+                              await reportService.markReportAsHelped(report.id);
+                              if (context.mounted) {
+                                Navigator.pop(context);
+                              }
+                            },
+                            icon: const Icon(Icons.check_circle),
+                            label: const Text('Mark as Helped'),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: Colors.green,
+                              foregroundColor: Colors.white,
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 24,
+                                vertical: 12,
+                              ),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
                     ],
                   ),
                 ),
