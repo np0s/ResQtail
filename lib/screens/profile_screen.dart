@@ -14,11 +14,20 @@ class ProfileScreen extends StatefulWidget {
   State<ProfileScreen> createState() => _ProfileScreenState();
 }
 
-class _ProfileScreenState extends State<ProfileScreen> {
+class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProviderStateMixin {
+  late TabController _tabController;
+
   @override
   void initState() {
     super.initState();
+    _tabController = TabController(length: 2, vsync: this);
     context.read<ReportService>().loadReports();
+  }
+
+  @override
+  void dispose() {
+    _tabController.dispose();
+    super.dispose();
   }
 
   @override
@@ -31,11 +40,31 @@ class _ProfileScreenState extends State<ProfileScreen> {
     final username = authService.username ?? userEmail.split('@')[0];
     final profileImagePath = authService.profileImagePath;
 
+    // Separate reports by helped status
+    final unhelpedReports = userReports.where((report) => !report.isHelped).toList().cast<Report>();
+    final helpedReports = userReports.where((report) => report.isHelped).toList().cast<Report>();
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('Profile'),
         backgroundColor: Colors.deepPurple,
         foregroundColor: Colors.white,
+        bottom: TabBar(
+          controller: _tabController,
+          indicatorColor: Colors.white,
+          labelColor: Colors.white,
+          unselectedLabelColor: Colors.white70,
+          tabs: const [
+            Tab(
+              icon: Icon(Icons.pending_actions),
+              text: 'Pending',
+            ),
+            Tab(
+              icon: Icon(Icons.check_circle),
+              text: 'Helped',
+            ),
+          ],
+        ),
         actions: [
           IconButton(
             icon: const Icon(Icons.settings),
@@ -141,7 +170,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   ],
                 ),
                 const SizedBox(height: 32),
-                // Reports Section and Logout Button
+                // Reports Section with Tabs
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -156,116 +185,16 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       ),
                       const SizedBox(height: 16),
                       Expanded(
-                        child: userReports.isEmpty
-                            ? Center(
-                                child: Column(
-                                  mainAxisAlignment: MainAxisAlignment.center,
-                                  children: [
-                                    Icon(
-                                      Icons.description_outlined,
-                                      size: 64,
-                                      color: Colors.deepPurple.withOpacity(0.5),
-                                    ),
-                                    const SizedBox(height: 16),
-                                    Text(
-                                      'No reports yet',
-                                      style: TextStyle(
-                                        fontSize: 18,
-                                        color: Colors.deepPurple.withOpacity(0.7),
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              )
-                            : ListView.builder(
-                                itemCount: userReports.length,
-                                itemBuilder: (context, index) {
-                                  final report = userReports[index];
-                                  return Card(
-                                    margin: const EdgeInsets.only(bottom: 16),
-                                    shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(12),
-                                    ),
-                                    child: InkWell(
-                                      onTap: () {
-                                        Navigator.push(
-                                          context,
-                                          MaterialPageRoute(
-                                            builder: (context) => ReportDetailsScreen(report: report),
-                                          ),
-                                        );
-                                      },
-                                      child: Padding(
-                                        padding: const EdgeInsets.all(16),
-                                        child: Row(
-                                          children: [
-                                            ClipRRect(
-                                              borderRadius: BorderRadius.circular(12),
-                                              child: Image.file(
-                                                File(report.imagePath),
-                                                width: 80,
-                                                height: 80,
-                                                fit: BoxFit.cover,
-                                              ),
-                                            ),
-                                            const SizedBox(width: 16),
-                                            Expanded(
-                                              child: Column(
-                                                crossAxisAlignment: CrossAxisAlignment.start,
-                                                children: [
-                                                  Text(
-                                                    report.detectedAnimalType ?? 'Unknown Animal',
-                                                    style: const TextStyle(
-                                                      fontWeight: FontWeight.bold,
-                                                      color: Colors.deepPurple,
-                                                      fontSize: 16,
-                                                    ),
-                                                  ),
-                                                  const SizedBox(height: 8),
-                                                  Text(
-                                                    report.description,
-                                                    maxLines: 2,
-                                                    overflow: TextOverflow.ellipsis,
-                                                    style: TextStyle(
-                                                      color: Colors.deepPurple.withOpacity(0.7),
-                                                    ),
-                                                  ),
-                                                  const SizedBox(height: 8),
-                                                  Row(
-                                                    children: [
-                                                      Icon(
-                                                        Icons.location_on,
-                                                        size: 16,
-                                                        color: Colors.deepPurple.withOpacity(0.7),
-                                                      ),
-                                                      const SizedBox(width: 4),
-                                                      Expanded(
-                                                        child: Text(
-                                                          '${report.location.latitude.toStringAsFixed(4)}, ${report.location.longitude.toStringAsFixed(4)}',
-                                                          style: TextStyle(
-                                                            color: Colors.deepPurple.withOpacity(0.7),
-                                                            fontSize: 12,
-                                                          ),
-                                                        ),
-                                                      ),
-                                                    ],
-                                                  ),
-                                                ],
-                                              ),
-                                            ),
-                                            const Icon(
-                                              Icons.chevron_right,
-                                              color: Colors.deepPurple,
-                                            ),
-                                          ],
-                                        ),
-                                      ),
-                                    ),
-                                  );
-                                },
-                              ),
+                        child: TabBarView(
+                          controller: _tabController,
+                          children: [
+                            // Pending Reports Tab
+                            _buildReportsList(unhelpedReports, 'No pending reports'),
+                            // Helped Reports Tab
+                            _buildReportsList(helpedReports, 'No helped reports'),
+                          ],
+                        ),
                       ),
-                      const SizedBox(height: 24),
                     ],
                   ),
                 ),
@@ -275,5 +204,138 @@ class _ProfileScreenState extends State<ProfileScreen> {
         ),
       ),
     );
+  }
+
+  Widget _buildReportsList(List<Report> reports, String emptyMessage) {
+    return reports.isEmpty
+        ? Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(
+                  Icons.description_outlined,
+                  size: 64,
+                  color: Colors.deepPurple.withOpacity(0.5),
+                ),
+                const SizedBox(height: 16),
+                Text(
+                  emptyMessage,
+                  style: TextStyle(
+                    fontSize: 18,
+                    color: Colors.deepPurple.withOpacity(0.7),
+                  ),
+                ),
+              ],
+            ),
+          )
+        : ListView.builder(
+            itemCount: reports.length,
+            itemBuilder: (context, index) {
+              final report = reports[index];
+              return Card(
+                margin: const EdgeInsets.only(bottom: 16),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: InkWell(
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => ReportDetailsScreen(report: report),
+                      ),
+                    );
+                  },
+                  child: Padding(
+                    padding: const EdgeInsets.all(16),
+                    child: Row(
+                      children: [
+                        ClipRRect(
+                          borderRadius: BorderRadius.circular(12),
+                          child: Image.file(
+                            File(report.imagePath),
+                            width: 80,
+                            height: 80,
+                            fit: BoxFit.cover,
+                          ),
+                        ),
+                        const SizedBox(width: 16),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Row(
+                                children: [
+                                  Expanded(
+                                    child: Text(
+                                      report.detectedAnimalType ?? 'Unknown Animal',
+                                      style: const TextStyle(
+                                        fontWeight: FontWeight.bold,
+                                        color: Colors.deepPurple,
+                                        fontSize: 16,
+                                      ),
+                                    ),
+                                  ),
+                                  if (report.isHelped)
+                                    Container(
+                                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                      decoration: BoxDecoration(
+                                        color: Colors.green,
+                                        borderRadius: BorderRadius.circular(12),
+                                      ),
+                                      child: const Text(
+                                        'Helped',
+                                        style: TextStyle(
+                                          color: Colors.white,
+                                          fontSize: 12,
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                      ),
+                                    ),
+                                ],
+                              ),
+                              const SizedBox(height: 8),
+                              Text(
+                                report.description,
+                                maxLines: 2,
+                                overflow: TextOverflow.ellipsis,
+                                style: TextStyle(
+                                  color: Colors.deepPurple.withOpacity(0.7),
+                                ),
+                              ),
+                              const SizedBox(height: 8),
+                              Row(
+                                children: [
+                                  Icon(
+                                    Icons.location_on,
+                                    size: 16,
+                                    color: Colors.deepPurple.withOpacity(0.7),
+                                  ),
+                                  const SizedBox(width: 4),
+                                  Expanded(
+                                    child: Text(
+                                      '${report.location.latitude.toStringAsFixed(4)}, ${report.location.longitude.toStringAsFixed(4)}',
+                                      style: TextStyle(
+                                        color: Colors.deepPurple.withOpacity(0.7),
+                                        fontSize: 12,
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ],
+                          ),
+                        ),
+                        const Icon(
+                          Icons.chevron_right,
+                          color: Colors.deepPurple,
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              );
+            },
+          );
   }
 }

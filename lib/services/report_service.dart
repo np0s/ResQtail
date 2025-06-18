@@ -12,7 +12,7 @@ class ReportService extends ChangeNotifier {
       _reports.where((report) => !report.isHelped).toList();
   List<Report> getUserReports(String userId) {
     return _reports
-        .where((report) => report.userId == userId && !report.isHelped)
+        .where((report) => report.userId == userId)
         .toList();
   }
 
