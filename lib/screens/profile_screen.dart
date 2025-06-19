@@ -14,7 +14,8 @@ class ProfileScreen extends StatefulWidget {
   State<ProfileScreen> createState() => _ProfileScreenState();
 }
 
-class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProviderStateMixin {
+class _ProfileScreenState extends State<ProfileScreen>
+    with SingleTickerProviderStateMixin {
   late TabController _tabController;
 
   @override
@@ -36,13 +37,16 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
     final reportService = context.watch<ReportService>();
     final userEmail = authService.email ?? '';
     final userId = authService.userId;
-    final userReports = userId != null ? reportService.getUserReports(userId) : [];
+    final userReports =
+        userId != null ? reportService.getUserReports(userId) : [];
     final username = authService.username ?? userEmail.split('@')[0];
     final profileImagePath = authService.profileImagePath;
 
     // Separate reports by helped status
-    final unhelpedReports = userReports.where((report) => !report.isHelped).toList().cast<Report>();
-    final helpedReports = userReports.where((report) => report.isHelped).toList().cast<Report>();
+    final unhelpedReports =
+        userReports.where((report) => !report.isHelped).toList().cast<Report>();
+    final helpedReports =
+        userReports.where((report) => report.isHelped).toList().cast<Report>();
 
     return Scaffold(
       appBar: AppBar(
@@ -99,7 +103,7 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
                   ],
                 ),
               );
-              
+
               if (shouldLogout == true) {
                 await authService.logout();
                 if (mounted) {
@@ -136,12 +140,15 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
                     CircleAvatar(
                       radius: 40,
                       backgroundColor: Colors.deepPurple[100],
-                      backgroundImage: profileImagePath != null && profileImagePath.isNotEmpty
+                      backgroundImage: profileImagePath != null &&
+                              profileImagePath.isNotEmpty
                           ? FileImage(File(profileImagePath))
                           : null,
-                      child: profileImagePath == null || profileImagePath.isEmpty
-                          ? Icon(Icons.person, color: Colors.deepPurple, size: 40)
-                          : null,
+                      child:
+                          profileImagePath == null || profileImagePath.isEmpty
+                              ? Icon(Icons.person,
+                                  color: Colors.deepPurple, size: 40)
+                              : null,
                     ),
                     const SizedBox(width: 20),
                     Expanded(
@@ -189,9 +196,11 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
                           controller: _tabController,
                           children: [
                             // Pending Reports Tab
-                            _buildReportsList(unhelpedReports, 'No pending reports'),
+                            _buildReportsList(
+                                unhelpedReports, 'No pending reports'),
                             // Helped Reports Tab
-                            _buildReportsList(helpedReports, 'No helped reports'),
+                            _buildReportsList(
+                                helpedReports, 'No helped reports'),
                           ],
                         ),
                       ),
@@ -242,7 +251,8 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
                     Navigator.push(
                       context,
                       MaterialPageRoute(
-                        builder: (context) => ReportDetailsScreen(report: report),
+                        builder: (context) =>
+                            ReportDetailsScreen(report: report),
                       ),
                     );
                   },
@@ -252,12 +262,20 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
                       children: [
                         ClipRRect(
                           borderRadius: BorderRadius.circular(12),
-                          child: Image.file(
-                            File(report.imagePath),
-                            width: 80,
-                            height: 80,
-                            fit: BoxFit.cover,
-                          ),
+                          child: report.imagePaths.isNotEmpty
+                              ? Image.file(
+                                  File(report.imagePaths[0]),
+                                  width: 80,
+                                  height: 80,
+                                  fit: BoxFit.cover,
+                                )
+                              : Container(
+                                  width: 80,
+                                  height: 80,
+                                  color: Colors.grey[300],
+                                  child: Icon(Icons.image,
+                                      size: 40, color: Colors.grey[600]),
+                                ),
                         ),
                         const SizedBox(width: 16),
                         Expanded(
@@ -268,7 +286,8 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
                                 children: [
                                   Expanded(
                                     child: Text(
-                                      report.detectedAnimalType ?? 'Unknown Animal',
+                                      report.detectedAnimalType ??
+                                          'Unknown Animal',
                                       style: const TextStyle(
                                         fontWeight: FontWeight.bold,
                                         color: Colors.deepPurple,
@@ -278,7 +297,8 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
                                   ),
                                   if (report.isHelped)
                                     Container(
-                                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                      padding: const EdgeInsets.symmetric(
+                                          horizontal: 8, vertical: 4),
                                       decoration: BoxDecoration(
                                         color: Colors.green,
                                         borderRadius: BorderRadius.circular(12),
@@ -316,7 +336,8 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
                                     child: Text(
                                       '${report.location.latitude.toStringAsFixed(4)}, ${report.location.longitude.toStringAsFixed(4)}',
                                       style: TextStyle(
-                                        color: Colors.deepPurple.withOpacity(0.7),
+                                        color:
+                                            Colors.deepPurple.withOpacity(0.7),
                                         fontSize: 12,
                                       ),
                                     ),

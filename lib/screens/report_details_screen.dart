@@ -7,13 +7,33 @@ import 'package:provider/provider.dart';
 import '../services/auth_service.dart';
 import '../services/report_service.dart';
 
-class ReportDetailsScreen extends StatelessWidget {
+class ReportDetailsScreen extends StatefulWidget {
   final Report report;
 
   const ReportDetailsScreen({
     Key? key,
     required this.report,
   }) : super(key: key);
+
+  @override
+  State<ReportDetailsScreen> createState() => _ReportDetailsScreenState();
+}
+
+class _ReportDetailsScreenState extends State<ReportDetailsScreen> {
+  int _currentPage = 0;
+  late final PageController _pageController;
+
+  @override
+  void initState() {
+    super.initState();
+    _pageController = PageController();
+  }
+
+  @override
+  void dispose() {
+    _pageController.dispose();
+    super.dispose();
+  }
 
   Future<void> _openInMaps(LatLng location) async {
     final url =
@@ -27,7 +47,8 @@ class ReportDetailsScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final authService = context.watch<AuthService>();
     final reportService = context.watch<ReportService>();
-    final isAuthor = authService.userId == report.userId;
+    final isAuthor = authService.userId == widget.report.userId;
+    final report = widget.report;
 
     return Scaffold(
       body: Container(
@@ -46,10 +67,59 @@ class ReportDetailsScreen extends StatelessWidget {
                 expandedHeight: 300,
                 pinned: true,
                 flexibleSpace: FlexibleSpaceBar(
-                  background: Image.file(
-                    File(report.imagePath),
-                    fit: BoxFit.cover,
-                  ),
+                  background: report.imagePaths.isNotEmpty
+                      ? Stack(
+                          children: [
+                            PageView.builder(
+                              controller: _pageController,
+                              itemCount: report.imagePaths.length,
+                              onPageChanged: (index) {
+                                setState(() {
+                                  _currentPage = index;
+                                });
+                              },
+                              itemBuilder: (context, index) {
+                                return Image.file(
+                                  File(report.imagePaths[index]),
+                                  fit: BoxFit.cover,
+                                );
+                              },
+                            ),
+                            if (report.imagePaths.length > 1)
+                              Positioned(
+                                left: 0,
+                                right: 0,
+                                bottom: 16,
+                                child: Row(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: List.generate(
+                                    report.imagePaths.length,
+                                    (index) => AnimatedContainer(
+                                      duration:
+                                          const Duration(milliseconds: 300),
+                                      margin: const EdgeInsets.symmetric(
+                                          horizontal: 4),
+                                      width: _currentPage == index ? 12 : 8,
+                                      height: _currentPage == index ? 12 : 8,
+                                      decoration: BoxDecoration(
+                                        color: _currentPage == index
+                                            ? Theme.of(context)
+                                                .colorScheme
+                                                .primary
+                                            : Colors.white.withOpacity(0.7),
+                                        shape: BoxShape.circle,
+                                        border: Border.all(
+                                          color: Colors.black.withOpacity(0.15),
+                                          width: 1.2,
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ),
+                          ],
+                        )
+                      : Container(color: Colors.grey[200]),
                 ),
                 leading: IconButton(
                   icon: const Icon(Icons.arrow_back, color: Colors.white),

@@ -69,7 +69,7 @@ class _MapScreenState extends State<MapScreen>
 
         _addCurrentLocationMarker();
         _addReportMarkers();
-        
+
         // Animate camera to current location
         if (_mapController != null) {
           await _mapController!.animateCamera(
@@ -348,7 +348,10 @@ class _MapScreenState extends State<MapScreen>
                                   ClipRRect(
                                     borderRadius: BorderRadius.circular(12),
                                     child: Image.file(
-                                      File(_selectedReport!.imagePath),
+                                      File(
+                                          _selectedReport!.imagePaths.isNotEmpty
+                                              ? _selectedReport!.imagePaths[0]
+                                              : ''),
                                       width: 64,
                                       height: 64,
                                       fit: BoxFit.cover,
@@ -357,7 +360,8 @@ class _MapScreenState extends State<MapScreen>
                                   const SizedBox(width: 16),
                                   Expanded(
                                     child: Column(
-                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
                                       children: [
                                         Text(
                                           _selectedReport!.detectedAnimalType ??
@@ -395,7 +399,8 @@ class _MapScreenState extends State<MapScreen>
                                           ),
                                         const SizedBox(height: 4),
                                         Text(
-                                          _formatDate(_selectedReport!.timestamp),
+                                          _formatDate(
+                                              _selectedReport!.timestamp),
                                           style: TextStyle(
                                             color: Colors.grey[600],
                                             fontSize: 12,
@@ -417,8 +422,9 @@ class _MapScreenState extends State<MapScreen>
                                     Navigator.push(
                                       context,
                                       MaterialPageRoute(
-                                        builder: (context) => ReportDetailsScreen(
-                                            report: _selectedReport!),
+                                        builder: (context) =>
+                                            ReportDetailsScreen(
+                                                report: _selectedReport!),
                                       ),
                                     );
                                   },
@@ -445,7 +451,8 @@ class _MapScreenState extends State<MapScreen>
                                       children: [
                                         Icon(
                                           Icons.email,
-                                          color: Colors.deepPurple.withOpacity(0.7),
+                                          color: Colors.deepPurple
+                                              .withOpacity(0.7),
                                           size: 20,
                                         ),
                                         const SizedBox(width: 8),
@@ -470,8 +477,8 @@ class _MapScreenState extends State<MapScreen>
                                         children: [
                                           Icon(
                                             Icons.phone,
-                                            color:
-                                                Colors.deepPurple.withOpacity(0.7),
+                                            color: Colors.deepPurple
+                                                .withOpacity(0.7),
                                             size: 20,
                                           ),
                                           const SizedBox(width: 8),

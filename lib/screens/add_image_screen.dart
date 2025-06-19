@@ -23,7 +23,8 @@ class AddImageScreen extends StatefulWidget {
 
 class _AddImageScreenState extends State<AddImageScreen>
     with SingleTickerProviderStateMixin {
-  File? _image;
+  File? _primaryImage;
+  final List<File> _secondaryImages = [];
   final ImagePicker _picker = ImagePicker();
   final List<String> _defaultTags = [
     'Injured',
@@ -42,7 +43,8 @@ class _AddImageScreenState extends State<AddImageScreen>
   LatLng? _initialMapCenter;
   double _cameraCardScale = 1.0;
   final List<String> _customTags = [];
-  final AnimalDetectionService _animalDetectionService = AnimalDetectionService();
+  final AnimalDetectionService _animalDetectionService =
+      AnimalDetectionService();
   bool _isDetecting = false;
 
   @override
@@ -151,18 +153,17 @@ class _AddImageScreenState extends State<AddImageScreen>
     }
   }
 
-  Future<void> _pickImage({required ImageSource source}) async {
+  Future<void> _pickPrimaryImage({required ImageSource source}) async {
     final pickedFile = await _picker.pickImage(source: source);
     if (pickedFile != null) {
       setState(() {
-        _image = File(pickedFile.path);
+        _primaryImage = File(pickedFile.path);
         _detectedAnimalType = 'Detecting animal...';
         _isDetecting = true;
       });
       _animController.forward(from: 0);
-
-      // Detect animal in the image
-      final detectedAnimal = await _animalDetectionService.detectAnimal(_image!);
+      final detectedAnimal =
+          await _animalDetectionService.detectAnimal(_primaryImage!);
       if (mounted) {
         setState(() {
           _detectedAnimalType = detectedAnimal ?? 'Unknown Animal';
@@ -170,6 +171,30 @@ class _AddImageScreenState extends State<AddImageScreen>
         });
       }
     }
+  }
+
+  Future<void> _pickSecondaryImage({required ImageSource source}) async {
+    if (source == ImageSource.gallery) {
+      final pickedFiles = await _picker.pickMultiImage();
+      if (pickedFiles != null && pickedFiles.isNotEmpty) {
+        setState(() {
+          _secondaryImages.addAll(pickedFiles.map((xfile) => File(xfile.path)));
+        });
+      }
+    } else {
+      final pickedFile = await _picker.pickImage(source: source);
+      if (pickedFile != null) {
+        setState(() {
+          _secondaryImages.add(File(pickedFile.path));
+        });
+      }
+    }
+  }
+
+  void _removeSecondaryImage(int index) {
+    setState(() {
+      _secondaryImages.removeAt(index);
+    });
   }
 
   void _showEditAnimalTypeDialog() {
@@ -249,64 +274,57 @@ class _AddImageScreenState extends State<AddImageScreen>
   }
 
   Future<void> _submitReport() async {
-    if (_image == null) {
+    if (_primaryImage == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please add an image first')),
+        const SnackBar(content: Text('Please add a primary image first')),
       );
       return;
     }
-
     if (_pickedLocation == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Please select a location')),
       );
       return;
     }
-
     if (_selectedTags.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Please select at least one tag')),
       );
       return;
     }
-
     final authService = context.read<AuthService>();
     final reportService = context.read<ReportService>();
     final userId = authService.userId;
-
     if (userId == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Please login to submit a report')),
       );
       return;
     }
-
     try {
-      // Create a unique ID for the report
       final reportId = const Uuid().v4();
-
-      // Create the report
+      final allImagePaths = <String>[
+        _primaryImage!.path,
+        ..._secondaryImages.map((f) => f.path)
+      ];
       final report = Report(
         id: reportId,
         userId: userId,
-        imagePath: _image!.path,
+        imagePaths: allImagePaths,
         description: _descriptionController.text,
         tags: _selectedTags,
         detectedAnimalType: _detectedAnimalType,
         location: _pickedLocation!,
         timestamp: DateTime.now(),
       );
-
-      // Save the report
       await reportService.addReport(report);
-
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Report submitted successfully')),
         );
-        // Clear the form
         setState(() {
-          _image = null;
+          _primaryImage = null;
+          _secondaryImages.clear();
           _selectedTags.clear();
           _descriptionController.clear();
           _detectedAnimalType = null;
@@ -321,6 +339,40 @@ class _AddImageScreenState extends State<AddImageScreen>
         );
       }
     }
+  }
+
+  void _showAddImageOptions() {
+    showModalBottomSheet(
+      context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (context) {
+        return SafeArea(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              ListTile(
+                leading: const Icon(Icons.camera_alt),
+                title: const Text('Camera'),
+                onTap: () {
+                  Navigator.pop(context);
+                  _pickSecondaryImage(source: ImageSource.camera);
+                },
+              ),
+              ListTile(
+                leading: const Icon(Icons.photo_library),
+                title: const Text('Gallery'),
+                onTap: () {
+                  Navigator.pop(context);
+                  _pickSecondaryImage(source: ImageSource.gallery);
+                },
+              ),
+            ],
+          ),
+        );
+      },
+    );
   }
 
   @override
@@ -377,55 +429,132 @@ class _AddImageScreenState extends State<AddImageScreen>
                       textAlign: TextAlign.center,
                     ),
                   ),
-                  // Animated Image Preview or Camera/Gallery Buttons
-                  MouseRegion(
-                    onEnter: (_) => setState(() => _cameraCardScale = 1.05),
-                    onExit: (_) => setState(() => _cameraCardScale = 1.0),
-                    child: GestureDetector(
-                      onTapDown: (_) => setState(() => _cameraCardScale = 1.08),
-                      onTapUp: (_) => setState(() => _cameraCardScale = 1.0),
-                      onTapCancel: () => setState(() => _cameraCardScale = 1.0),
-                      child: AnimatedScale(
-                        scale: _cameraCardScale,
-                        duration: const Duration(milliseconds: 200),
-                        curve: Curves.easeInOut,
-                        child: AnimatedSwitcher(
-                          duration: const Duration(milliseconds: 600),
-                          transitionBuilder: (child, anim) =>
-                              ScaleTransition(scale: anim, child: child),
-                          child: _image == null
-                              ? _buildCameraGalleryPrompt(context, isMobile)
-                              : FadeTransition(
-                                  opacity: _fadeAnim,
-                                  child: Container(
-                                    width: isMobile ? 220 : 320,
-                                    height: isMobile ? 220 : 320,
-                                    decoration: BoxDecoration(
-                                      color: Colors.white.withAlpha(179),
-                                      borderRadius: BorderRadius.circular(28),
-                                      boxShadow: const [
-                                        BoxShadow(
-                                          color: Colors.black12,
-                                          blurRadius: 16,
-                                          offset: Offset(0, 8),
-                                        ),
-                                      ],
-                                    ),
-                                    child: ClipRRect(
-                                      borderRadius: BorderRadius.circular(28),
-                                      child: Image.file(
-                                        _image!,
-                                        fit: BoxFit.cover,
-                                        width: isMobile ? 220 : 320,
-                                        height: isMobile ? 220 : 320,
-                                      ),
+                  // Primary image picker
+                  if (_primaryImage == null)
+                    _buildCameraGalleryPrompt(context, isMobile,
+                        isPrimary: true)
+                  else ...[
+                    Stack(
+                      children: [
+                        FadeTransition(
+                          opacity: _fadeAnim,
+                          child: Container(
+                            width: isMobile ? 220 : 320,
+                            height: isMobile ? 220 : 320,
+                            decoration: BoxDecoration(
+                              color: Colors.white.withAlpha(179),
+                              borderRadius: BorderRadius.circular(28),
+                              boxShadow: const [
+                                BoxShadow(
+                                  color: Colors.black12,
+                                  blurRadius: 16,
+                                  offset: Offset(0, 8),
+                                ),
+                              ],
+                            ),
+                            child: ClipRRect(
+                              borderRadius: BorderRadius.circular(28),
+                              child: Image.file(
+                                _primaryImage!,
+                                fit: BoxFit.cover,
+                                width: isMobile ? 220 : 320,
+                                height: isMobile ? 220 : 320,
+                              ),
+                            ),
+                          ),
+                        ),
+                        Positioned(
+                          top: 8,
+                          right: 8,
+                          child: GestureDetector(
+                            onTap: () {
+                              setState(() {
+                                _primaryImage = null;
+                                _detectedAnimalType = null;
+                              });
+                            },
+                            child: Container(
+                              decoration: BoxDecoration(
+                                color: Colors.white,
+                                shape: BoxShape.circle,
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: Colors.black.withOpacity(0.1),
+                                    blurRadius: 4,
+                                    offset: const Offset(0, 2),
+                                  ),
+                                ],
+                              ),
+                              child: const Icon(Icons.close,
+                                  size: 24, color: Colors.red),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                    // Secondary images row
+                    if (_secondaryImages.isNotEmpty)
+                      SizedBox(
+                        height: 100,
+                        width: double.infinity,
+                        child: ListView.builder(
+                          scrollDirection: Axis.horizontal,
+                          itemCount: _secondaryImages.length,
+                          clipBehavior: Clip.hardEdge,
+                          itemBuilder: (context, index) {
+                            return Stack(
+                              children: [
+                                Container(
+                                  margin: const EdgeInsets.all(8),
+                                  width: 100,
+                                  height: 100,
+                                  child: ClipRRect(
+                                    borderRadius: BorderRadius.circular(16),
+                                    child: Image.file(
+                                      _secondaryImages[index],
+                                      fit: BoxFit.cover,
                                     ),
                                   ),
                                 ),
+                                Positioned(
+                                  top: 0,
+                                  right: 0,
+                                  child: GestureDetector(
+                                    onTap: () => _removeSecondaryImage(index),
+                                    child: Container(
+                                      decoration: BoxDecoration(
+                                        color: Colors.white,
+                                        shape: BoxShape.circle,
+                                      ),
+                                      child: const Icon(Icons.close,
+                                          size: 20, color: Colors.red),
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            );
+                          },
+                        ),
+                      ),
+                    // Add secondary image button
+                    Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 8.0),
+                      child: Center(
+                        child: SizedBox(
+                          width: isMobile ? 220 : 320,
+                          child: ElevatedButton.icon(
+                            onPressed: _showAddImageOptions,
+                            icon: const Icon(Icons.add_photo_alternate),
+                            label: const Text('Add More Images',
+                                textAlign: TextAlign.center),
+                            style: ElevatedButton.styleFrom(
+                              alignment: Alignment.center,
+                            ),
+                          ),
                         ),
                       ),
                     ),
-                  ),
+                  ],
                   const SizedBox(height: 28),
                   // Map Picker
                   Container(
@@ -500,9 +629,11 @@ class _AddImageScreenState extends State<AddImageScreen>
                                                     const MarkerId('picked'),
                                                 position: _pickedLocation!,
                                                 draggable: true,
-                                                onDragEnd: (LatLng newPosition) {
+                                                onDragEnd:
+                                                    (LatLng newPosition) {
                                                   setState(() {
-                                                    _pickedLocation = newPosition;
+                                                    _pickedLocation =
+                                                        newPosition;
                                                   });
                                                 },
                                               ),
@@ -559,96 +690,11 @@ class _AddImageScreenState extends State<AddImageScreen>
                               ),
                   ),
                   const SizedBox(height: 28),
-                  // Image Preview with Change Button
-                  if (_image != null)
-                    Stack(
-                      children: [
-                        FadeTransition(
-                          opacity: _fadeAnim,
-                          child: Container(
-                            width: isMobile ? 220 : 320,
-                            height: isMobile ? 220 : 320,
-                            decoration: BoxDecoration(
-                              color: Colors.white.withAlpha(179),
-                              borderRadius: BorderRadius.circular(28),
-                              boxShadow: const [
-                                BoxShadow(
-                                  color: Colors.black12,
-                                  blurRadius: 16,
-                                  offset: Offset(0, 8),
-                                ),
-                              ],
-                            ),
-                            child: ClipRRect(
-                              borderRadius: BorderRadius.circular(28),
-                              child: Image.file(
-                                _image!,
-                                fit: BoxFit.cover,
-                                width: isMobile ? 220 : 320,
-                                height: isMobile ? 220 : 320,
-                              ),
-                            ),
-                          ),
-                        ),
-                        Positioned(
-                          top: 8,
-                          right: 8,
-                          child: Container(
-                            decoration: BoxDecoration(
-                              color: Colors.white.withOpacity(0.9),
-                              shape: BoxShape.circle,
-                              boxShadow: [
-                                BoxShadow(
-                                  color: Colors.black.withOpacity(0.1),
-                                  blurRadius: 4,
-                                  offset: const Offset(0, 2),
-                                ),
-                              ],
-                            ),
-                            child: IconButton(
-                              icon: const Icon(Icons.edit,
-                                  color: Colors.deepPurple),
-                              onPressed: () {
-                                showDialog(
-                                  context: context,
-                                  builder: (context) => AlertDialog(
-                                    title: const Text('Change Photo'),
-                                    content: const Text(
-                                        'Would you like to take a new photo or choose from gallery?'),
-                                    actions: [
-                                      TextButton(
-                                        onPressed: () {
-                                          Navigator.pop(context);
-                                          _pickImage(source: ImageSource.camera);
-                                        },
-                                        child: const Text('Take Photo'),
-                                      ),
-                                      TextButton(
-                                        onPressed: () {
-                                          Navigator.pop(context);
-                                          _pickImage(source: ImageSource.gallery);
-                                        },
-                                        child: const Text('Choose from Gallery'),
-                                      ),
-                                      TextButton(
-                                        onPressed: () => Navigator.pop(context),
-                                        child: const Text('Cancel'),
-                                      ),
-                                    ],
-                                  ),
-                                );
-                              },
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-
                   // Animal Type Input
-                  if (_image != null)
+                  if (_primaryImage != null)
                     Container(
-                      padding:
-                          const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 16, vertical: 8),
                       decoration: BoxDecoration(
                         color: Colors.white.withAlpha(179),
                         borderRadius: BorderRadius.circular(16),
@@ -728,15 +774,18 @@ class _AddImageScreenState extends State<AddImageScreen>
                             });
                           },
                           backgroundColor: Colors.white.withAlpha(179),
-                          selectedColor:
-                              Theme.of(context).colorScheme.primary.withAlpha(51),
+                          selectedColor: Theme.of(context)
+                              .colorScheme
+                              .primary
+                              .withAlpha(51),
                           checkmarkColor: Theme.of(context).colorScheme.primary,
                           labelStyle: TextStyle(
                             color: isSelected
                                 ? Theme.of(context).colorScheme.primary
                                 : Colors.black,
-                            fontWeight:
-                                isSelected ? FontWeight.bold : FontWeight.normal,
+                            fontWeight: isSelected
+                                ? FontWeight.bold
+                                : FontWeight.normal,
                           ),
                         );
                       }),
@@ -755,15 +804,18 @@ class _AddImageScreenState extends State<AddImageScreen>
                             });
                           },
                           backgroundColor: Colors.white.withAlpha(179),
-                          selectedColor:
-                              Theme.of(context).colorScheme.primary.withAlpha(51),
+                          selectedColor: Theme.of(context)
+                              .colorScheme
+                              .primary
+                              .withAlpha(51),
                           checkmarkColor: Theme.of(context).colorScheme.primary,
                           labelStyle: TextStyle(
                             color: isSelected
                                 ? Theme.of(context).colorScheme.primary
                                 : Colors.black,
-                            fontWeight:
-                                isSelected ? FontWeight.bold : FontWeight.normal,
+                            fontWeight: isSelected
+                                ? FontWeight.bold
+                                : FontWeight.normal,
                           ),
                         );
                       }),
@@ -837,7 +889,8 @@ class _AddImageScreenState extends State<AddImageScreen>
     );
   }
 
-  Widget _buildCameraGalleryPrompt(BuildContext context, bool isMobile) {
+  Widget _buildCameraGalleryPrompt(BuildContext context, bool isMobile,
+      {bool isPrimary = false}) {
     final double boxWidth = isMobile ? 280 : 400;
     final double boxHeight = isMobile ? 200 : 240;
     return Container(
@@ -866,7 +919,7 @@ class _AddImageScreenState extends State<AddImageScreen>
                 size: isMobile ? 56 : 72),
             const SizedBox(height: 12),
             Text(
-              'Add a photo of the animal',
+              isPrimary ? 'Add a photo of the animal (Primary)' : 'Add a photo',
               style: TextStyle(
                 fontWeight: FontWeight.bold,
                 fontSize: isMobile ? 16 : 20,
@@ -881,7 +934,10 @@ class _AddImageScreenState extends State<AddImageScreen>
                   child: Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 4.0),
                     child: ElevatedButton.icon(
-                      onPressed: () => _pickImage(source: ImageSource.camera),
+                      onPressed: isPrimary
+                          ? () => _pickPrimaryImage(source: ImageSource.camera)
+                          : () =>
+                              _pickSecondaryImage(source: ImageSource.camera),
                       icon: const Icon(Icons.camera_alt),
                       label: const Text('Camera'),
                       style: ElevatedButton.styleFrom(
@@ -902,7 +958,10 @@ class _AddImageScreenState extends State<AddImageScreen>
                   child: Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 4.0),
                     child: OutlinedButton.icon(
-                      onPressed: () => _pickImage(source: ImageSource.gallery),
+                      onPressed: isPrimary
+                          ? () => _pickPrimaryImage(source: ImageSource.gallery)
+                          : () =>
+                              _pickSecondaryImage(source: ImageSource.gallery),
                       icon: const Icon(Icons.photo_library),
                       label: const Text('Gallery'),
                       style: OutlinedButton.styleFrom(

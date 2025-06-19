@@ -11,9 +11,7 @@ class ReportService extends ChangeNotifier {
   List<Report> get reports =>
       _reports.where((report) => !report.isHelped).toList();
   List<Report> getUserReports(String userId) {
-    return _reports
-        .where((report) => report.userId == userId)
-        .toList();
+    return _reports.where((report) => report.userId == userId).toList();
   }
 
   Future<String> get _reportsFilePath async {
@@ -64,7 +62,7 @@ class ReportService extends ChangeNotifier {
       _reports[index] = Report(
         id: report.id,
         userId: report.userId,
-        imagePath: report.imagePath,
+        imagePaths: report.imagePaths,
         description: report.description,
         tags: report.tags,
         detectedAnimalType: report.detectedAnimalType,

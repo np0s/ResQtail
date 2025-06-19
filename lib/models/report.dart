@@ -3,7 +3,7 @@ import 'package:google_maps_flutter/google_maps_flutter.dart';
 class Report {
   final String id;
   final String userId;
-  final String imagePath;
+  final List<String> imagePaths;
   final String description;
   final Set<String> tags;
   final String? detectedAnimalType;
@@ -14,7 +14,7 @@ class Report {
   Report({
     required this.id,
     required this.userId,
-    required this.imagePath,
+    required this.imagePaths,
     required this.description,
     required this.tags,
     this.detectedAnimalType,
@@ -27,7 +27,7 @@ class Report {
     return {
       'id': id,
       'userId': userId,
-      'imagePath': imagePath,
+      'imagePaths': imagePaths,
       'description': description,
       'tags': tags.toList(),
       'detectedAnimalType': detectedAnimalType,
@@ -44,7 +44,7 @@ class Report {
     return Report(
       id: json['id'],
       userId: json['userId'],
-      imagePath: json['imagePath'],
+      imagePaths: List<String>.from(json['imagePaths'] ?? []),
       description: json['description'],
       tags: Set<String>.from(json['tags']),
       detectedAnimalType: json['detectedAnimalType'],
