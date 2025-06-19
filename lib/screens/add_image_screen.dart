@@ -341,6 +341,40 @@ class _AddImageScreenState extends State<AddImageScreen>
     }
   }
 
+  void _showAddImageOptions() {
+    showModalBottomSheet(
+      context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (context) {
+        return SafeArea(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              ListTile(
+                leading: const Icon(Icons.camera_alt),
+                title: const Text('Camera'),
+                onTap: () {
+                  Navigator.pop(context);
+                  _pickSecondaryImage(source: ImageSource.camera);
+                },
+              ),
+              ListTile(
+                leading: const Icon(Icons.photo_library),
+                title: const Text('Gallery'),
+                onTap: () {
+                  Navigator.pop(context);
+                  _pickSecondaryImage(source: ImageSource.gallery);
+                },
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
   @override
   void dispose() {
     _animController.dispose();
@@ -505,34 +539,19 @@ class _AddImageScreenState extends State<AddImageScreen>
                     // Add secondary image button
                     Padding(
                       padding: const EdgeInsets.symmetric(vertical: 8.0),
-                      child: Row(
-                        children: [
-                          Expanded(
-                            child: ElevatedButton.icon(
-                              onPressed: () => _pickSecondaryImage(
-                                  source: ImageSource.camera),
-                              icon: const Icon(Icons.camera_alt),
-                              label: const Text('Add More (Camera)',
-                                  textAlign: TextAlign.center),
-                              style: ElevatedButton.styleFrom(
-                                alignment: Alignment.center,
-                              ),
+                      child: Center(
+                        child: SizedBox(
+                          width: isMobile ? 220 : 320,
+                          child: ElevatedButton.icon(
+                            onPressed: _showAddImageOptions,
+                            icon: const Icon(Icons.add_photo_alternate),
+                            label: const Text('Add More Images',
+                                textAlign: TextAlign.center),
+                            style: ElevatedButton.styleFrom(
+                              alignment: Alignment.center,
                             ),
                           ),
-                          const SizedBox(width: 8),
-                          Expanded(
-                            child: OutlinedButton.icon(
-                              onPressed: () => _pickSecondaryImage(
-                                  source: ImageSource.gallery),
-                              icon: const Icon(Icons.photo_library),
-                              label: const Text('Add More (Gallery)',
-                                  textAlign: TextAlign.center),
-                              style: OutlinedButton.styleFrom(
-                                alignment: Alignment.center,
-                              ),
-                            ),
-                          ),
-                        ],
+                        ),
                       ),
                     ),
                   ],
