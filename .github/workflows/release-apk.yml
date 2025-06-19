@@ -1,0 +1,66 @@
+name: Build and Release APK
+
+on:
+  push:
+    branches:
+      - main
+
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.22.0'
+
+      - name: Install dependencies
+        run: flutter pub get
+
+      - name: Decode .env
+        run: echo "${{ secrets.ENV_FILE }}" > .env
+
+      - name: Decode google-services.json
+        run: echo "${{ secrets.GOOGLE_SERVICES_JSON }}" > android/app/google-services.json
+
+      - name: Build release APK
+        run: flutter build apk --release
+
+      - name: Get latest tag
+        id: get_tag
+        run: |
+          git fetch --tags
+          latest=$(git tag --sort=-v:refname | grep '^v' | head -n1)
+          if [ -z "$latest" ]; then latest="v1.0.0"; fi
+          echo "latest_tag=$latest" >> $GITHUB_OUTPUT
+
+      - name: Bump patch version
+        id: bump
+        run: |
+          latest=${{ steps.get_tag.outputs.latest_tag }}
+          v=${latest#v}
+          major=$(echo $v | cut -d. -f1)
+          minor=$(echo $v | cut -d. -f2)
+          patch=$(echo $v | cut -d. -f3)
+          new_tag="v$major.$minor.$((patch + 1))"
+          echo "new_tag=$new_tag" >> $GITHUB_OUTPUT
+
+      - name: Rename APK with version
+        run: |
+          mv build/app/outputs/flutter-apk/app-release.apk \
+             build/app/outputs/flutter-apk/resQtail-${{ steps.bump.outputs.new_tag }}.apk
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v1
+        with:
+          name: ${{ steps.bump.outputs.new_tag }}
+          tag_name: ${{ steps.bump.outputs.new_tag }}
+          files: build/app/outputs/flutter-apk/resQtail-${{ steps.bump.outputs.new_tag }}.apk
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
