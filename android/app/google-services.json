@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "34500432160",
+    "project_id": "resqtail-0",
+    "storage_bucket": "resqtail-0.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:34500432160:android:817a606c1c075aa5fb4745",
+        "android_client_info": {
+          "package_name": "com.unemployednerds.resqtail"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCzQ8XNEYn-N6qkXU_3enswZQrpT5UiJlo"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
