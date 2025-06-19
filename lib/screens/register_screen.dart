@@ -55,10 +55,17 @@ class _RegisterScreenState extends State<RegisterScreen>
 
     try {
       final authService = context.read<AuthService>();
+      final rawPhone = _phoneController.text;
+      String digits = rawPhone.replaceAll(RegExp(r'\D'), '');
+      if (digits.startsWith('91') && digits.length == 12) {
+        digits = digits.substring(2);
+      } else if (digits.startsWith('0') && digits.length == 11) {
+        digits = digits.substring(1);
+      }
       final success = await authService.register(
         _emailController.text,
         _passwordController.text,
-        _phoneController.text,
+        digits,
       );
 
       if (!success && mounted) {
@@ -176,12 +183,18 @@ class _RegisterScreenState extends State<RegisterScreen>
                               ),
                             ),
                             keyboardType: TextInputType.phone,
-                            maxLength: 10,
+                            maxLength: 13,
                             validator: (value) {
                               if (value == null || value.isEmpty) {
                                 return 'Please enter your phone number';
                               }
-                              if (!RegExp(r'^[6-9]\d{9}$').hasMatch(value)) {
+                              String digits = value.replaceAll(RegExp(r'\D'), '');
+                              if (digits.startsWith('91') && digits.length == 12) {
+                                digits = digits.substring(2);
+                              } else if (digits.startsWith('0') && digits.length == 11) {
+                                digits = digits.substring(1);
+                              }
+                              if (!RegExp(r'^[6-9]\d{9}?$').hasMatch(digits)) {
                                 return 'Enter a valid 10-digit Indian phone number';
                               }
                               return null;
