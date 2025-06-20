@@ -48,8 +48,8 @@ jobs:
       - name: Write google-services.json
         run: |
           cat > android/app/google-services.json <<EOF
-${{ secrets.GOOGLE_SERVICES_JSON }}
-EOF
+          ${{ secrets.GOOGLE_SERVICES_JSON }}
+          EOF
 
       - name: Get latest tag
         id: get_tag
