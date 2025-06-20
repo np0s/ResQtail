@@ -31,8 +31,8 @@ jobs:
       - name: Write google-services.json
         run: |
           cat > android/app/google-services.json <<EOF
-${{ secrets.GOOGLE_SERVICES_JSON }}
-EOF
+          ${{ secrets.GOOGLE_SERVICES_JSON }}
+          EOF
 
       - name: Accept licenses
         run: yes | $ANDROID_SDK_ROOT/cmdline-tools/latest/bin/sdkmanager --licenses
