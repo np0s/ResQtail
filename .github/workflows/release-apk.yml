@@ -6,6 +6,9 @@ on:
       - main
   workflow_dispatch:
 
+permissions:
+  contents: write
+
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -13,12 +16,25 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
 
       - name: Setup Flutter
         uses: subosito/flutter-action@v2
         with:
           flutter-version: '3.32.4'
-          cache: false
+          cache: true
+
+      - name: Cache Flutter dependencies
+        uses: actions/cache@v3
+        with:
+          path: |
+            ~/.pub-cache
+            .dart_tool
+            build
+          key: ${{ runner.os }}-flutter-${{ hashFiles('**/pubspec.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-flutter-
 
       - name: Clean Flutter
         run: flutter clean
@@ -32,8 +48,8 @@ jobs:
       - name: Write google-services.json
         run: |
           cat > android/app/google-services.json <<EOF
-          ${{ secrets.GOOGLE_SERVICES_JSON }}
-          EOF
+${{ secrets.GOOGLE_SERVICES_JSON }}
+EOF
 
       - name: Get latest tag
         id: get_tag
@@ -56,7 +72,7 @@ jobs:
           echo "flutter.versionCode=1" >> android/local.properties
           echo "flutter.versionName=${{ steps.bump.outputs.new_tag }}" >> android/local.properties
 
-      - name: Accept licenses
+      - name: Accept Android SDK licenses
         run: yes | $ANDROID_SDK_ROOT/cmdline-tools/latest/bin/sdkmanager --licenses
 
       - name: Install Android NDK 27.0.12077973
