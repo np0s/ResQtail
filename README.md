@@ -1,64 +1,39 @@
 # ResQtail
 
-A Flutter application for pet rescue and management.
+## Overview
+ResQtail is a cross-platform Flutter application designed for pet rescue and management. It empowers communities to report, locate, and help stray or injured animals efficiently.
 
-## Environment Setup
+## Features
 
-1. Copy the example environment file:
-```bash
-cp .env.example .env
-```
+- **Pet Rescue Reporting:** Easily report stray or injured animals by uploading images, tagging the situation (e.g., "Injured", "Needs Help", "Adoption", "Abandoned"), and providing a description.
+- **Automatic Animal Detection:** Utilizes AI to automatically detect the type of animal in uploaded images, streamlining the reporting process.
+- **Location Integration:** Geotags reports using your device's current location. View all reports on an interactive map to see where help is needed most.
+- **User Authentication:** Secure registration and login with email verification and phone number validation for trusted community participation.
+- **Profile Management:** Update your profile, including username, phone number, and profile picture. Control the visibility of your phone number for privacy.
+- **Email Notifications:** Receive email verification and notifications powered by SMTP integration.
+- **Multi-Platform Support:** Available for Android, iOS, web, Windows, macOS, and Linux.
 
-2. Edit the `.env` file with your SMTP credentials:
-```env
-# SMTP Configuration
-SMTP_SERVER=smtp.gmail.com
-SMTP_PORT=587
+## Screenshots
+<!-- Add screenshots of the app below. Example: -->
+<!-- ![Home Screen](assets/screenshots/home.png) -->
+<!-- ![Map Screen](assets/screenshots/map.png) -->
 
-# Email Credentials
-SMTP_USERNAME=your-email@gmail.com
-SMTP_PASSWORD=your-app-password
+## How It Works
+1. **Sign Up & Verify:** Register with your email and phone number, then verify your email.
+2. **Report an Animal:** Upload a photo, let the app detect the animal, add tags and a description, and submit the report with your location.
+3. **View Reports:** Browse and filter reports on an interactive map to find animals in need nearby.
+4. **Profile Management:** Update your details and control your privacy settings.
 
-# Sender Information
-SMTP_FROM_EMAIL=your-email@gmail.com
-SMTP_FROM_NAME=ResqTail
-```
+## Download
 
-### Gmail Setup Instructions
+You can download the latest version of the app from the [Releases](https://github.com/your-repo/releases) tab.
 
-If you're using Gmail as your SMTP server:
+## Contributing
+Contributions are welcome! Please open an issue or submit a pull request for any improvements or bug fixes.
 
-1. Enable 2-factor authentication in your Google Account
-2. Generate an App Password:
-   - Go to your Google Account settings
-   - Navigate to Security
-   - Under "2-Step Verification", click on "App passwords"
-   - Select "Mail" and your device
-   - Copy the generated 16-character password
-3. Use this App Password as your `SMTP_PASSWORD` in the `.env` file
+## License
+This project is licensed under the terms of the [MIT License](LICENSE).
 
-### Platform-Specific Notes
+---
 
-#### Web Platform
-When running on web, the email functionality is simulated for development purposes. In a production environment, you should:
-1. Set up a backend API to handle email sending
-2. Update the `EmailService` to use your API instead of direct SMTP
-
-#### Mobile/Desktop Platforms
-The email functionality works as expected on mobile and desktop platforms using the configured SMTP server.
-
-## Getting Started
-
-1. Install dependencies:
-```bash
-flutter pub get
-```
-
-2. Set up your environment:
-   - Copy `.env.example` to `.env`
-   - Edit `.env` with your actual credentials
-
-3. Run the app:
-```bash
-flutter run
-```
+For more information, please refer to the in-app help or contact the project maintainers.
