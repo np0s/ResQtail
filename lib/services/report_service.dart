@@ -66,10 +66,8 @@ class ReportService extends ChangeNotifier {
     for (int i = 0; i < imagePaths.length; i++) {
       final file = File(imagePaths[i]);
       if (!file.existsSync() || file.lengthSync() == 0) {
-        debugPrint('File does not exist or is empty: \\${file.path}');
-        throw Exception('File does not exist or is empty: \\${file.path}');
+        throw Exception('File does not exist or is empty: \${file.path}');
       }
-      debugPrint('Uploading report image to Zipline: path=\${imagePaths[i]}');
       var request = http.MultipartRequest('POST', Uri.parse(ziplineUrl));
       request.files.add(await http.MultipartFile.fromPath('file', file.path));
       request.headers['authorization'] = apiKey;
@@ -78,14 +76,11 @@ class ReportService extends ChangeNotifier {
         final respStr = await response.stream.bytesToString();
         final url = RegExp(r'"url"\s*:\s*"([^"]+)"').firstMatch(respStr)?.group(1);
         if (url != null) {
-          debugPrint('Zipline upload success: $url');
           downloadUrls.add(url);
         } else {
-          debugPrint('Zipline upload response missing URL: $respStr');
           throw Exception('Zipline upload response missing URL');
         }
       } else {
-        debugPrint('Failed to upload to Zipline: ${response.statusCode}');
         throw Exception('Failed to upload to Zipline: ${response.statusCode}');
       }
     }
@@ -94,11 +89,8 @@ class ReportService extends ChangeNotifier {
 
   Future<void> addReport(Report report) async {
     try {
-      debugPrint('addReport: userId=${report.userId}, reportId=${report.id}, imagePaths=${report.imagePaths}');
       // Upload images to Zipline and get URLs
-      debugPrint('Calling _uploadReportImagesZipline');
       final imageUrls = await _uploadReportImagesZipline(report.imagePaths);
-      debugPrint('Returned from _uploadReportImagesZipline with imageUrls=$imageUrls');
       final reportWithUrls = Report(
         id: report.id,
         userId: report.userId,
@@ -110,9 +102,7 @@ class ReportService extends ChangeNotifier {
         timestamp: report.timestamp,
         isHelped: report.isHelped,
       );
-      debugPrint('Adding report to Firestore: ${report.id}');
       await _firestore.collection('reports').doc(report.id).set(reportWithUrls.toJson());
-      debugPrint('Report added to Firestore: ${report.id}');
       _reports.add(reportWithUrls);
       notifyListeners();
     } catch (e) {
