@@ -4,7 +4,6 @@ on:
   push:
     branches:
       - main
-
   workflow_dispatch:
 
 jobs:
@@ -14,11 +13,17 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
 
       - name: Setup Flutter
         uses: subosito/flutter-action@v2
         with:
           flutter-version: '3.22.0'
+          cache: false
+
+      - name: Clean Flutter
+        run: flutter clean
 
       - name: Install dependencies
         run: flutter pub get
@@ -44,12 +49,20 @@ jobs:
           IFS='.' read -r major minor patch <<< "$v"
           new_tag="v$major.$minor.$((patch + 1))"
           echo "new_tag=$new_tag" >> $GITHUB_OUTPUT
-        shell: bash
 
       - name: Set Flutter version properties
         run: |
           echo "flutter.versionCode=1" >> android/local.properties
           echo "flutter.versionName=${{ steps.bump.outputs.new_tag }}" >> android/local.properties
+
+      - name: Accept licenses
+        run: yes | sdkmanager --licenses
+
+      - name: Install Android NDK 27.0.12077973
+        run: sdkmanager "ndk;27.0.12077973"
+
+      - name: Set NDK environment variable
+        run: echo "ANDROID_NDK_HOME=$ANDROID_HOME/ndk/27.0.12077973" >> $GITHUB_ENV
 
       - name: Build release APK
         run: flutter build apk --release
