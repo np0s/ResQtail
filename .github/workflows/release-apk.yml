@@ -55,7 +55,10 @@ jobs:
         id: get_tag
         run: |
           git fetch --tags
-          tag=$(git tag --sort=-v:refname | grep '^v' | head -n1 || echo "v1.0.0")
+          tag=$(git tag --sort=-v:refname | grep '^v[0-9]' | head -n1)
+          if [ -z "$tag" ]; then
+            tag="v1.0.0"
+          fi
           echo "latest_tag=$tag" >> $GITHUB_OUTPUT
 
       - name: Bump patch version
