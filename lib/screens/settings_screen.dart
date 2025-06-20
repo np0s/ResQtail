@@ -68,6 +68,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
   }
 
   Future<void> _pickImage() async {
+    setState(() {
+      _isLoading = true;
+    });
     final XFile? image = await _picker.pickImage(source: ImageSource.gallery);
     if (image != null) {
       // ignore: use_build_context_synchronously
@@ -75,11 +78,24 @@ class _SettingsScreenState extends State<SettingsScreen> {
       if (!mounted) return;
       await _loadUserData();
     }
+    if (mounted) {
+      setState(() {
+        _isLoading = false;
+      });
+    }
   }
 
   Future<void> _deleteProfilePicture() async {
+    setState(() {
+      _isLoading = true;
+    });
     await context.read<AuthService>().setProfileImagePath('');
     await _loadUserData();
+    if (mounted) {
+      setState(() {
+        _isLoading = false;
+      });
+    }
   }
 
   Widget _buildProfileImageSection() {
@@ -371,25 +387,60 @@ class _SettingsScreenState extends State<SettingsScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Settings'),
-        backgroundColor: Colors.deepPurple,
-      ),
-      body: _isLoading
-          ? const Center(child: CircularProgressIndicator())
-          : SingleChildScrollView(
-              padding: const EdgeInsets.all(16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  _buildProfileImageSection(),
-                  const SizedBox(height: 24),
-                  _buildUsernameSection(),
-                  const SizedBox(height: 16),
-                  _buildPhoneNumberSection(),
-                ],
+      body: Stack(
+        children: [
+          Column(
+            children: [
+              AppBar(
+                title: const Text('Settings'),
+                backgroundColor: Colors.deepPurple,
+              ),
+              Expanded(
+                child: SingleChildScrollView(
+                  padding: const EdgeInsets.all(16),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      _buildProfileImageSection(),
+                      const SizedBox(height: 24),
+                      _buildUsernameSection(),
+                      const SizedBox(height: 16),
+                      _buildPhoneNumberSection(),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          ),
+          if (_isLoading)
+            Positioned.fill(
+              child: Container(
+                color: Colors.black.withOpacity(0.35),
+                child: const Center(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      CircularProgressIndicator(
+                        color: Colors.deepPurple,
+                        strokeWidth: 3.0,
+                      ),
+                      SizedBox(height: 18),
+                      Text(
+                        'Loading...',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                          letterSpacing: 1.1,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
               ),
             ),
+        ],
+      ),
     );
   }
 } 

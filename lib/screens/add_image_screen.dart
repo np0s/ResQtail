@@ -37,6 +37,7 @@ class _AddImageScreenState extends State<AddImageScreen>
   late AnimationController _animationController;
   GoogleMapController? _mapController;
   bool _isLoadingLocation = true;
+  bool _isUploading = false;
   LatLng? _pickedLocation;
   LatLng? _initialMapCenter;
   final List<String> _customTags = [];
@@ -292,6 +293,9 @@ class _AddImageScreenState extends State<AddImageScreen>
       );
       return;
     }
+    setState(() {
+      _isUploading = true;
+    });
     try {
       final reportId = const Uuid().v4();
       final allImagePaths = <String>[
@@ -328,6 +332,12 @@ class _AddImageScreenState extends State<AddImageScreen>
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Failed to submit report')),
         );
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isUploading = false;
+        });
       }
     }
   }
@@ -806,9 +816,21 @@ class _AddImageScreenState extends State<AddImageScreen>
                 width: double.infinity,
                 height: 48,
                 child: ElevatedButton.icon(
-                  onPressed: _submitReport,
-                  icon: const Icon(Icons.send, color: Colors.white),
-                  label: const Text('Submit', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white)),
+                  onPressed: _isUploading ? null : _submitReport,
+                  icon: _isUploading
+                      ? const SizedBox(
+                          width: 22,
+                          height: 22,
+                          child: CircularProgressIndicator(
+                            color: Colors.white,
+                            strokeWidth: 2.5,
+                          ),
+                        )
+                      : const Icon(Icons.send, color: Colors.white),
+                  label: Text(
+                    _isUploading ? 'Uploading...' : 'Submit',
+                    style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white),
+                  ),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.deepPurple,
                     foregroundColor: Colors.white,
