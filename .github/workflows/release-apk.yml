@@ -56,10 +56,10 @@ jobs:
           echo "flutter.versionName=${{ steps.bump.outputs.new_tag }}" >> android/local.properties
 
       - name: Accept licenses
-        run: yes | sdkmanager --licenses
+        run: yes | $ANDROID_SDK_ROOT/cmdline-tools/latest/bin/sdkmanager --licenses
 
       - name: Install Android NDK 27.0.12077973
-        run: sdkmanager "ndk;27.0.12077973"
+        run: $ANDROID_SDK_ROOT/cmdline-tools/latest/bin/sdkmanager "ndk;27.0.12077973"
 
       - name: Set NDK environment variable
         run: echo "ANDROID_NDK_HOME=$ANDROID_HOME/ndk/27.0.12077973" >> $GITHUB_ENV
