@@ -58,14 +58,6 @@ class AuthService extends ChangeNotifier {
     return {};
   }
 
-  Future<void> _saveUsers(Map<String, dynamic> users) async {
-    try {
-      final file = File(await _usersFilePath);
-      await file.writeAsString(json.encode(users));
-    } catch (e) {
-      debugPrint('Error saving users: $e');
-    }
-  }
 
   Future<void> checkLoginStatus() async {
     final prefs = await SharedPreferences.getInstance();
