@@ -3,10 +3,12 @@ import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:path_provider/path_provider.dart';
 import '../models/report.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 class ReportService extends ChangeNotifier {
   static const String _reportsFileName = 'reports.json';
   List<Report> _reports = [];
+  final _firestore = FirebaseFirestore.instance;
 
   List<Report> get reports =>
       _reports.where((report) => !report.isHelped).toList();
@@ -21,15 +23,24 @@ class ReportService extends ChangeNotifier {
 
   Future<void> loadReports() async {
     try {
-      final file = File(await _reportsFilePath);
-      if (await file.exists()) {
-        final contents = await file.readAsString();
-        final List<dynamic> jsonList = json.decode(contents);
-        _reports = jsonList.map((json) => Report.fromJson(json)).toList();
-        notifyListeners();
-      }
+      // Load from Firestore (all reports)
+      final snapshot = await _firestore.collection('reports').get();
+      _reports = snapshot.docs.map((doc) => Report.fromJson(doc.data())).toList();
+      notifyListeners();
     } catch (e) {
-      debugPrint('Error loading reports: $e');
+      debugPrint('Error loading reports from Firestore: $e');
+      // Fallback to local file for legacy data
+      try {
+        final file = File(await _reportsFilePath);
+        if (await file.exists()) {
+          final contents = await file.readAsString();
+          final List<dynamic> jsonList = json.decode(contents);
+          _reports = jsonList.map((json) => Report.fromJson(json)).toList();
+          notifyListeners();
+        }
+      } catch (e) {
+        debugPrint('Error loading reports from file: $e');
+      }
     }
   }
 
@@ -44,22 +55,37 @@ class ReportService extends ChangeNotifier {
   }
 
   Future<void> addReport(Report report) async {
-    _reports.add(report);
-    await saveReports();
-    notifyListeners();
+    try {
+      await _firestore.collection('reports').doc(report.id).set(report.toJson());
+      _reports.add(report);
+      notifyListeners();
+    } catch (e) {
+      debugPrint('Error adding report to Firestore: $e');
+      // Fallback to local file for legacy support
+      _reports.add(report);
+      await saveReports();
+      notifyListeners();
+    }
   }
 
   Future<void> deleteReport(String reportId) async {
-    _reports.removeWhere((report) => report.id == reportId);
-    await saveReports();
-    notifyListeners();
+    try {
+      await _firestore.collection('reports').doc(reportId).delete();
+      _reports.removeWhere((report) => report.id == reportId);
+      notifyListeners();
+    } catch (e) {
+      debugPrint('Error deleting report from Firestore: $e');
+      _reports.removeWhere((report) => report.id == reportId);
+      await saveReports();
+      notifyListeners();
+    }
   }
 
   Future<void> markReportAsHelped(String reportId) async {
     final index = _reports.indexWhere((report) => report.id == reportId);
     if (index != -1) {
       final report = _reports[index];
-      _reports[index] = Report(
+      final updatedReport = Report(
         id: report.id,
         userId: report.userId,
         imagePaths: report.imagePaths,
@@ -70,8 +96,16 @@ class ReportService extends ChangeNotifier {
         timestamp: report.timestamp,
         isHelped: true,
       );
-      await saveReports();
-      notifyListeners();
+      try {
+        await _firestore.collection('reports').doc(reportId).update({'isHelped': true});
+        _reports[index] = updatedReport;
+        notifyListeners();
+      } catch (e) {
+        debugPrint('Error updating report in Firestore: $e');
+        _reports[index] = updatedReport;
+        await saveReports();
+        notifyListeners();
+      }
     }
   }
 }
