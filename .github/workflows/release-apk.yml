@@ -23,33 +23,36 @@ jobs:
       - name: Install dependencies
         run: flutter pub get
 
-      - name: Decode .env
+      - name: Write .env file
         run: echo "${{ secrets.ENV_FILE }}" > .env
 
-      - name: Decode google-services.json
+      - name: Write google-services.json
         run: echo "${{ secrets.GOOGLE_SERVICES_JSON }}" > android/app/google-services.json
-
-      - name: Build release APK
-        run: flutter build apk --release
 
       - name: Get latest tag
         id: get_tag
         run: |
           git fetch --tags
-          latest=$(git tag --sort=-v:refname | grep '^v' | head -n1)
-          if [ -z "$latest" ]; then latest="v1.0.0"; fi
-          echo "latest_tag=$latest" >> $GITHUB_OUTPUT
+          tag=$(git tag --sort=-v:refname | grep '^v' | head -n1 || echo "v1.0.0")
+          echo "latest_tag=$tag" >> $GITHUB_OUTPUT
 
       - name: Bump patch version
         id: bump
         run: |
-          latest=${{ steps.get_tag.outputs.latest_tag }}
-          v=${latest#v}
-          major=$(echo $v | cut -d. -f1)
-          minor=$(echo $v | cut -d. -f2)
-          patch=$(echo $v | cut -d. -f3)
+          v=${{ steps.get_tag.outputs.latest_tag }}
+          v=${v#v}
+          IFS='.' read -r major minor patch <<< "$v"
           new_tag="v$major.$minor.$((patch + 1))"
           echo "new_tag=$new_tag" >> $GITHUB_OUTPUT
+        shell: bash
+
+      - name: Set Flutter version properties
+        run: |
+          echo "flutter.versionCode=1" >> android/local.properties
+          echo "flutter.versionName=${{ steps.bump.outputs.new_tag }}" >> android/local.properties
+
+      - name: Build release APK
+        run: flutter build apk --release
 
       - name: Rename APK with version
         run: |
