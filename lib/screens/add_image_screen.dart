@@ -14,6 +14,7 @@ import '../services/report_service.dart';
 import '../services/animal_detection_service.dart';
 import '../models/report.dart';
 import 'dart:ui';
+import '../screens/map_picker_screen.dart';
 
 class AddImageScreen extends StatefulWidget {
   const AddImageScreen({Key? key}) : super(key: key);
@@ -622,81 +623,128 @@ class _AddImageScreenState extends State<AddImageScreen>
               // Step 3: Location
               _sectionHeader('3. Location'),
               const SizedBox(height: 8),
-              Card(
-                elevation: 3,
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-                child: Container(
-                  height: 140,
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(14),
-                  ),
-                  child: _isLoadingLocation
-                      ? const Center(child: CircularProgressIndicator())
-                      : _initialMapCenter == null
-                          ? const Center(child: Text('Could not get location'))
-                          : Stack(
-                              children: [
-                                ClipRRect(
-                                  borderRadius: BorderRadius.circular(14),
-                                  child: GoogleMap(
-                                    initialCameraPosition: CameraPosition(
-                                      target: _initialMapCenter!,
-                                      zoom: 15,
-                                    ),
-                                    onMapCreated: (controller) {
-                                      _mapController = controller;
-                                    },
-                                    onCameraMove: (position) {
-                                      setState(() {
-                                        _pickedLocation = position.target;
-                                      });
-                                    },
-                                    onTap: (LatLng location) {
-                                      setState(() {
-                                        _pickedLocation = location;
-                                      });
-                                      ScaffoldMessenger.of(context).showSnackBar(
-                                        const SnackBar(content: Text('Location pinned'), duration: Duration(seconds: 1)),
-                                      );
-                                    },
-                                    markers: _pickedLocation == null
-                                        ? {}
-                                        : {
-                                            Marker(
-                                              markerId: const MarkerId('picked'),
-                                              position: _pickedLocation!,
-                                              draggable: true,
-                                              onDragEnd: (LatLng newPosition) {
-                                                setState(() {
-                                                  _pickedLocation = newPosition;
-                                                });
-                                              },
+              Builder(
+                builder: (context) {
+                  final screenHeight = MediaQuery.of(context).size.height;
+                  final mapHeight = screenHeight * 0.22; // 22% of screen height
+                  return Card(
+                    elevation: 3,
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                    child: Stack(
+                      children: [
+                        Container(
+                          height: mapHeight,
+                          decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(14),
+                          ),
+                          child: _isLoadingLocation
+                              ? const Center(child: CircularProgressIndicator())
+                              : _initialMapCenter == null
+                                  ? const Center(child: Text('Could not get location'))
+                                  : Stack(
+                                      children: [
+                                        ClipRRect(
+                                          borderRadius: BorderRadius.circular(14),
+                                          child: GoogleMap(
+                                            initialCameraPosition: CameraPosition(
+                                              target: _pickedLocation ?? _initialMapCenter!,
+                                              zoom: 15,
                                             ),
-                                          },
-                                    myLocationButtonEnabled: false,
-                                    myLocationEnabled: true,
-                                    zoomControlsEnabled: false,
-                                    zoomGesturesEnabled: true,
-                                    scrollGesturesEnabled: true,
-                                    rotateGesturesEnabled: true,
-                                    tiltGesturesEnabled: true,
-                                    compassEnabled: true,
-                                    mapToolbarEnabled: true,
-                                  ),
-                                ),
-                                Positioned(
-                                  bottom: 8,
-                                  right: 8,
-                                  child: FloatingActionButton(
-                                    heroTag: 'gps',
-                                    mini: true,
-                                    onPressed: _getCurrentLocation,
-                                    backgroundColor: Colors.deepPurple,
-                                    child: const Icon(Icons.gps_fixed, color: Colors.white),
-                                  ),
-                                ),
-                              ],
-                            ),
+                                            onMapCreated: (controller) {
+                                              _mapController = controller;
+                                            },
+                                            onTap: (LatLng location) {
+                                              setState(() {
+                                                _pickedLocation = location;
+                                              });
+                                              ScaffoldMessenger.of(context).showSnackBar(
+                                                const SnackBar(content: Text('Location pinned'), duration: Duration(seconds: 1)),
+                                              );
+                                            },
+                                            markers: _pickedLocation == null
+                                                ? {}
+                                                : {
+                                                    Marker(
+                                                      markerId: const MarkerId('picked'),
+                                                      position: _pickedLocation!,
+                                                      draggable: true,
+                                                      onDragEnd: (LatLng newPosition) {
+                                                        setState(() {
+                                                          _pickedLocation = newPosition;
+                                                        });
+                                                      },
+                                                    ),
+                                                  },
+                                            myLocationButtonEnabled: false,
+                                            myLocationEnabled: true,
+                                            zoomControlsEnabled: false,
+                                            zoomGesturesEnabled: true,
+                                            scrollGesturesEnabled: true,
+                                            rotateGesturesEnabled: true,
+                                            tiltGesturesEnabled: true,
+                                            compassEnabled: true,
+                                            mapToolbarEnabled: true,
+                                          ),
+                                        ),
+                                        Positioned(
+                                          bottom: 8,
+                                          right: 8,
+                                          child: FloatingActionButton(
+                                            heroTag: 'gps',
+                                            mini: true,
+                                            onPressed: _getCurrentLocation,
+                                            backgroundColor: Colors.deepPurple,
+                                            child: const Icon(Icons.gps_fixed, color: Colors.white),
+                                          ),
+                                        ),
+                                        Positioned(
+                                          top: 8,
+                                          right: 8,
+                                          child: FloatingActionButton(
+                                            heroTag: 'expand_map',
+                                            mini: true,
+                                            backgroundColor: Colors.deepPurple,
+                                            onPressed: () async {
+                                              final picked = await Navigator.push(
+                                                context,
+                                                MaterialPageRoute(
+                                                  builder: (context) => MapPickerScreen(
+                                                    initialLocation: _pickedLocation ?? _initialMapCenter!,
+                                                  ),
+                                                ),
+                                              );
+                                              if (picked != null && picked is LatLng) {
+                                                setState(() {
+                                                  _pickedLocation = picked;
+                                                });
+                                                // Animate camera to new picked location
+                                                if (_mapController != null) {
+                                                  _mapController!.animateCamera(
+                                                    CameraUpdate.newCameraPosition(
+                                                      CameraPosition(target: picked, zoom: 15),
+                                                    ),
+                                                  );
+                                                }
+                                              }
+                                            },
+                                            child: const Icon(Icons.open_in_full, color: Colors.white),
+                                            tooltip: 'Open Full Map',
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                        ),
+                      ],
+                    ),
+                  );
+                },
+              ),
+              const Padding(
+                padding: EdgeInsets.only(top: 6, left: 8, right: 8, bottom: 0),
+                child: Text(
+                  'Tip: Tap on the map to add a pin.',
+                  style: TextStyle(fontSize: 12, color: Colors.deepPurple, fontStyle: FontStyle.italic),
+                  textAlign: TextAlign.left,
                 ),
               ),
               const SizedBox(height: 24),
