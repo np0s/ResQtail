@@ -1,0 +1,58 @@
+name: Build APK and Upload Artifact
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.32.4'
+          cache: true
+
+      - name: Clean and get dependencies
+        run: |
+          flutter clean
+          flutter pub get
+
+      - name: Write .env file
+        run: echo "${{ secrets.ENV_FILE }}" > .env
+
+      - name: Write google-services.json
+        run: |
+          cat > android/app/google-services.json <<EOF
+${{ secrets.GOOGLE_SERVICES_JSON }}
+EOF
+
+      - name: Accept licenses
+        run: yes | $ANDROID_SDK_ROOT/cmdline-tools/latest/bin/sdkmanager --licenses
+
+      - name: Install Android NDK
+        run: $ANDROID_SDK_ROOT/cmdline-tools/latest/bin/sdkmanager "ndk;27.0.12077973"
+
+      - name: Set version properties
+        run: |
+          echo "flutter.versionCode=1" >> android/local.properties
+          echo "flutter.versionName=1.0.0" >> android/local.properties
+
+      - name: Build APK
+        run: flutter build apk --release
+
+      - name: Rename APK
+        run: mv build/app/outputs/flutter-apk/app-release.apk build/app/outputs/flutter-apk/resQtail.apk
+
+      - name: Upload APK artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: resQtail-apk
+          path: build/app/outputs/flutter-apk/resQtail.apk
