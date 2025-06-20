@@ -24,17 +24,10 @@ jobs:
         run: flutter pub get
 
       - name: Write .env file
-        run: |
-          echo "${{ secrets.ENV_FILE }}" > .env
-        shell: bash
+        run: echo "${{ secrets.ENV_FILE }}" > .env
 
       - name: Write google-services.json
-        run: |
-          echo "${{ secrets.GOOGLE_SERVICES_JSON }}" > android/app/google-services.json
-        shell: bash
-
-      - name: Build release APK
-        run: flutter build apk --release
+        run: echo "${{ secrets.GOOGLE_SERVICES_JSON }}" > android/app/google-services.json
 
       - name: Get latest tag
         id: get_tag
@@ -42,7 +35,6 @@ jobs:
           git fetch --tags
           tag=$(git tag --sort=-v:refname | grep '^v' | head -n1 || echo "v1.0.0")
           echo "latest_tag=$tag" >> $GITHUB_OUTPUT
-        shell: bash
 
       - name: Bump patch version
         id: bump
@@ -53,6 +45,14 @@ jobs:
           new_tag="v$major.$minor.$((patch + 1))"
           echo "new_tag=$new_tag" >> $GITHUB_OUTPUT
         shell: bash
+
+      - name: Set Flutter version properties
+        run: |
+          echo "flutter.versionCode=1" >> android/local.properties
+          echo "flutter.versionName=${{ steps.bump.outputs.new_tag }}" >> android/local.properties
+
+      - name: Build release APK
+        run: flutter build apk --release
 
       - name: Rename APK with version
         run: |
