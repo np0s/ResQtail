@@ -4,6 +4,7 @@ import 'package:flutter/foundation.dart';
 import 'package:path_provider/path_provider.dart';
 import '../models/report.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_storage/firebase_storage.dart';
 
 class ReportService extends ChangeNotifier {
   static const String _reportsFileName = 'reports.json';
@@ -54,10 +55,36 @@ class ReportService extends ChangeNotifier {
     }
   }
 
+  Future<List<String>> _uploadReportImages(String reportId, List<String> imagePaths) async {
+    final storage = FirebaseStorage.instance;
+    List<String> downloadUrls = [];
+    for (int i = 0; i < imagePaths.length; i++) {
+      final file = File(imagePaths[i]);
+      final ref = storage.ref().child('reports/$reportId/image_$i.jpg');
+      final uploadTask = await ref.putFile(file);
+      final url = await uploadTask.ref.getDownloadURL();
+      downloadUrls.add(url);
+    }
+    return downloadUrls;
+  }
+
   Future<void> addReport(Report report) async {
     try {
-      await _firestore.collection('reports').doc(report.id).set(report.toJson());
-      _reports.add(report);
+      // Upload images to Firebase Storage and get URLs
+      final imageUrls = await _uploadReportImages(report.id, report.imagePaths);
+      final reportWithUrls = Report(
+        id: report.id,
+        userId: report.userId,
+        imagePaths: imageUrls,
+        description: report.description,
+        tags: report.tags,
+        detectedAnimalType: report.detectedAnimalType,
+        location: report.location,
+        timestamp: report.timestamp,
+        isHelped: report.isHelped,
+      );
+      await _firestore.collection('reports').doc(report.id).set(reportWithUrls.toJson());
+      _reports.add(reportWithUrls);
       notifyListeners();
     } catch (e) {
       debugPrint('Error adding report to Firestore: $e');

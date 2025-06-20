@@ -114,7 +114,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       backgroundColor: Colors.deepPurple[100],
                       backgroundImage: profileImagePath != null &&
                               profileImagePath.isNotEmpty
-                          ? FileImage(File(profileImagePath))
+                          ? (profileImagePath.startsWith('http')
+                              ? NetworkImage(profileImagePath) as ImageProvider<Object>
+                              : FileImage(File(profileImagePath)) as ImageProvider<Object>)
                           : null,
                       child: profileImagePath == null ||
                               profileImagePath.isEmpty

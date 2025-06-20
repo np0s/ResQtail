@@ -746,6 +746,8 @@ class _AddImageScreenState extends State<AddImageScreen>
                     ..._secondaryImages.asMap().entries.map((entry) {
                       final idx = entry.key;
                       final file = entry.value;
+                      final path = file.path;
+                      final isNetwork = path.startsWith('http');
                       return Stack(
                         children: [
                           Container(
@@ -760,7 +762,9 @@ class _AddImageScreenState extends State<AddImageScreen>
                             ),
                             child: ClipRRect(
                               borderRadius: BorderRadius.circular(10),
-                              child: Image.file(file, fit: BoxFit.cover),
+                              child: isNetwork
+                                  ? Image.network(path, fit: BoxFit.cover)
+                                  : Image.file(file, fit: BoxFit.cover),
                             ),
                           ),
                           Positioned(

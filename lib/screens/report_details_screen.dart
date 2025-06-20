@@ -79,10 +79,11 @@ class _ReportDetailsScreenState extends State<ReportDetailsScreen> {
                                 });
                               },
                               itemBuilder: (context, index) {
-                                return Image.file(
-                                  File(report.imagePaths[index]),
-                                  fit: BoxFit.cover,
-                                );
+                                final path = report.imagePaths[index];
+                                final isNetwork = path.startsWith('http');
+                                return isNetwork
+                                    ? Image.network(path, fit: BoxFit.cover)
+                                    : Image.file(File(path), fit: BoxFit.cover);
                               },
                             ),
                             if (report.imagePaths.length > 1)

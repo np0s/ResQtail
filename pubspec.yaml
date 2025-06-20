@@ -52,6 +52,7 @@ dependencies:
   permission_handler: ^11.0.1
   firebase_core: ^2.30.0
   cloud_firestore: ^4.15.8
+  firebase_storage: ^11.6.5
 
 dev_dependencies:
   flutter_test:
