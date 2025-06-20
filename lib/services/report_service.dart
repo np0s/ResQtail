@@ -4,6 +4,8 @@ import 'package:flutter/foundation.dart';
 import 'package:path_provider/path_provider.dart';
 import '../models/report.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:http/http.dart' as http;
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 class ReportService extends ChangeNotifier {
   static const String _reportsFileName = 'reports.json';
@@ -54,10 +56,54 @@ class ReportService extends ChangeNotifier {
     }
   }
 
+  Future<List<String>> _uploadReportImagesZipline(List<String> imagePaths) async {
+    const ziplineUrl = 'https://share.p1ng.me/api/upload';
+    final apiKey = dotenv.env['ZIPLINE_API_KEY'];
+    if (apiKey == null || apiKey.isEmpty) {
+      throw Exception('ZIPLINE_API_KEY not set in .env');
+    }
+    List<String> downloadUrls = [];
+    for (int i = 0; i < imagePaths.length; i++) {
+      final file = File(imagePaths[i]);
+      if (!file.existsSync() || file.lengthSync() == 0) {
+        throw Exception('File does not exist or is empty: \${file.path}');
+      }
+      var request = http.MultipartRequest('POST', Uri.parse(ziplineUrl));
+      request.files.add(await http.MultipartFile.fromPath('file', file.path));
+      request.headers['authorization'] = apiKey;
+      var response = await request.send();
+      if (response.statusCode == 200) {
+        final respStr = await response.stream.bytesToString();
+        final url = RegExp(r'"url"\s*:\s*"([^"]+)"').firstMatch(respStr)?.group(1);
+        if (url != null) {
+          downloadUrls.add(url);
+        } else {
+          throw Exception('Zipline upload response missing URL');
+        }
+      } else {
+        throw Exception('Failed to upload to Zipline: ${response.statusCode}');
+      }
+    }
+    return downloadUrls;
+  }
+
   Future<void> addReport(Report report) async {
     try {
-      await _firestore.collection('reports').doc(report.id).set(report.toJson());
-      _reports.add(report);
+      // Upload images to Zipline and get URLs
+      final imageUrls = await _uploadReportImagesZipline(report.imagePaths);
+      final reportWithUrls = Report(
+        id: report.id,
+        userId: report.userId,
+        imagePaths: imageUrls,
+        description: report.description,
+        tags: report.tags,
+        detectedAnimalType: report.detectedAnimalType,
+        location: report.location,
+        timestamp: report.timestamp,
+        isHelped: report.isHelped,
+      );
+      await _firestore.collection('reports').doc(report.id).set(reportWithUrls.toJson());
+      _reports.add(reportWithUrls);
       notifyListeners();
     } catch (e) {
       debugPrint('Error adding report to Firestore: $e');

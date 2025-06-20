@@ -151,19 +151,12 @@ class _HomeScreenState extends State<HomeScreen>
               onTap: () => _onItemTapped(2),
               child: CircleAvatar(
                 radius: 20,
-                backgroundImage: context
-                                .watch<AuthService>()
-                                .profileImagePath !=
-                            null &&
-                        context
-                            .watch<AuthService>()
-                            .profileImagePath!
-                            .isNotEmpty
-                    ? FileImage(
-                        File(context.watch<AuthService>().profileImagePath!))
-                    : const NetworkImage(
-                        'https://upload.wikimedia.org/wikipedia/commons/7/70/User_icon_BLACK-01.png',
-                      ) as ImageProvider,
+                backgroundImage: context.watch<AuthService>().profileImagePath != null &&
+                        context.watch<AuthService>().profileImagePath!.isNotEmpty
+                    ? (context.watch<AuthService>().profileImagePath!.startsWith('http')
+                        ? NetworkImage(context.watch<AuthService>().profileImagePath!) as ImageProvider<Object>
+                        : FileImage(File(context.watch<AuthService>().profileImagePath!)) as ImageProvider<Object>)
+                    : const NetworkImage('https://upload.wikimedia.org/wikipedia/commons/7/70/User_icon_BLACK-01.png'),
                 backgroundColor: Colors.grey[200],
                 child: _selectedIndex == 2
                     ? Container(
