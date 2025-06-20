@@ -30,7 +30,10 @@ jobs:
         run: echo "${{ secrets.ENV_FILE }}" > .env
 
       - name: Write google-services.json
-        run: echo "${{ secrets.GOOGLE_SERVICES_JSON }}" > android/app/google-services.json
+        run: |
+          cat > android/app/google-services.json <<EOF
+          ${{ secrets.GOOGLE_SERVICES_JSON }}
+          EOF
 
       - name: Get latest tag
         id: get_tag
