@@ -6,6 +6,7 @@ import '../models/report.dart';
 import 'package:provider/provider.dart';
 import '../services/auth_service.dart';
 import '../services/report_service.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 class ReportDetailsScreen extends StatefulWidget {
   final Report report;
@@ -297,7 +298,7 @@ class _ReportDetailsScreenState extends State<ReportDetailsScreen> {
                                 ),
                                 const SizedBox(width: 12),
                                 Text(
-                                  authService.email ?? 'No email available',
+                                  report.email ?? 'No email available',
                                   style: TextStyle(
                                     color: Colors.deepPurple.withAlpha(170),
                                     fontSize: 16,
@@ -305,7 +306,7 @@ class _ReportDetailsScreenState extends State<ReportDetailsScreen> {
                                 ),
                               ],
                             ),
-                            if (authService.showPhoneNumber) ...[
+                            if (report.showPhoneNumber == true && (report.phoneNumber?.isNotEmpty ?? false)) ...[
                               const SizedBox(height: 12),
                               Row(
                                 children: [
@@ -315,8 +316,7 @@ class _ReportDetailsScreenState extends State<ReportDetailsScreen> {
                                   ),
                                   const SizedBox(width: 12),
                                   Text(
-                                    authService.phoneNumber ??
-                                        'No phone available',
+                                    report.phoneNumber ?? 'No phone available',
                                     style: TextStyle(
                                       color: Colors.deepPurple.withAlpha(170),
                                       fontSize: 16,

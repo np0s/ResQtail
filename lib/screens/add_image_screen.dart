@@ -307,6 +307,9 @@ class _AddImageScreenState extends State<AddImageScreen>
         detectedAnimalType: _detectedAnimalType,
         location: _pickedLocation!,
         timestamp: DateTime.now(),
+        email: authService.email,
+        phoneNumber: authService.phoneNumber,
+        showPhoneNumber: authService.showPhoneNumber,
       );
       await reportService.addReport(report);
       if (mounted) {

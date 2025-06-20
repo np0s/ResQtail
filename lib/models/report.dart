@@ -10,6 +10,9 @@ class Report {
   final LatLng location;
   final DateTime timestamp;
   final bool isHelped;
+  final String? email;
+  final String? phoneNumber;
+  final bool? showPhoneNumber;
 
   Report({
     required this.id,
@@ -21,6 +24,9 @@ class Report {
     required this.location,
     required this.timestamp,
     this.isHelped = false,
+    this.email,
+    this.phoneNumber,
+    this.showPhoneNumber,
   });
 
   Map<String, dynamic> toJson() {
@@ -37,6 +43,9 @@ class Report {
       },
       'timestamp': timestamp.toIso8601String(),
       'isHelped': isHelped,
+      'email': email,
+      'phoneNumber': phoneNumber,
+      'showPhoneNumber': showPhoneNumber,
     };
   }
 
@@ -54,6 +63,9 @@ class Report {
       ),
       timestamp: DateTime.parse(json['timestamp']),
       isHelped: json['isHelped'] ?? false,
+      email: json['email'],
+      phoneNumber: json['phoneNumber'],
+      showPhoneNumber: json['showPhoneNumber'],
     );
   }
 }
