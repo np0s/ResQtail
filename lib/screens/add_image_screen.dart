@@ -13,6 +13,7 @@ import '../services/auth_service.dart';
 import '../services/report_service.dart';
 import '../services/animal_detection_service.dart';
 import '../models/report.dart';
+import 'dart:ui';
 
 class AddImageScreen extends StatefulWidget {
   const AddImageScreen({Key? key}) : super(key: key);
@@ -35,8 +36,8 @@ class _AddImageScreenState extends State<AddImageScreen>
   final Set<String> _selectedTags = {};
   final TextEditingController _descriptionController = TextEditingController();
   String? _detectedAnimalType;
-  late AnimationController _animController;
-  late Animation<double> _fadeAnim;
+  late AnimationController _animationController;
+  late Animation<double> _fadeAnimation;
   GoogleMapController? _mapController;
   bool _isLoadingLocation = true;
   LatLng? _pickedLocation;
@@ -58,14 +59,15 @@ class _AddImageScreenState extends State<AddImageScreen>
         statusBarBrightness: Brightness.light,
       ),
     );
-    _animController = AnimationController(
+    _animationController = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 700),
+      duration: const Duration(milliseconds: 900),
     );
-    _fadeAnim = CurvedAnimation(
-      parent: _animController,
+    _fadeAnimation = CurvedAnimation(
+      parent: _animationController,
       curve: Curves.easeInOut,
     );
+    _animationController.forward();
     _setInitialLocation();
     _animalDetectionService.initialize();
   }
@@ -161,7 +163,7 @@ class _AddImageScreenState extends State<AddImageScreen>
         _detectedAnimalType = 'Detecting animal...';
         _isDetecting = true;
       });
-      _animController.forward(from: 0);
+      _animationController.forward(from: 0);
       final detectedAnimal =
           await _animalDetectionService.detectAnimal(_primaryImage!);
       if (mounted) {
@@ -377,7 +379,7 @@ class _AddImageScreenState extends State<AddImageScreen>
 
   @override
   void dispose() {
-    _animController.dispose();
+    _animationController.dispose();
     _descriptionController.dispose();
     _animalDetectionService.dispose();
     super.dispose();
@@ -387,601 +389,448 @@ class _AddImageScreenState extends State<AddImageScreen>
   Widget build(BuildContext context) {
     final isMobile = MediaQuery.of(context).size.width < 600;
     return Scaffold(
-      extendBodyBehindAppBar: true,
+      extendBody: true,
       body: Container(
         decoration: const BoxDecoration(
           gradient: LinearGradient(
-            colors: [Color(0xFF8EC5FC), Color(0xFFE0C3FC), Color(0xFFf093fb)],
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
-            stops: [0.0, 0.7, 1.0],
+            colors: [Color(0xFFF3E7E9), Color(0xFFE3EEFF), Color(0xFFD9E7FF)],
           ),
         ),
         child: SafeArea(
-          child: SingleChildScrollView(
-            child: Padding(
-              padding: EdgeInsets.only(
-                left: isMobile ? 16 : 80,
-                right: isMobile ? 16 : 80,
-                top: isMobile ? 24 : 40,
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.center,
-                children: [
-                  // Stylish Header
-                  Padding(
-                    padding: const EdgeInsets.only(bottom: 24.0),
-                    child: Text(
-                      'Add Your Report',
-                      style: TextStyle(
-                        fontSize: isMobile ? 28 : 36,
-                        fontWeight: FontWeight.bold,
-                        letterSpacing: 1.2,
-                        color: Colors.deepPurple[400],
-                        shadows: [
-                          Shadow(
-                            color: Colors.deepPurple.withAlpha(38),
-                            blurRadius: 12,
-                            offset: const Offset(0, 4),
-                          ),
-                        ],
-                      ),
-                      textAlign: TextAlign.center,
-                    ),
-                  ),
-                  // Primary image picker
-                  if (_primaryImage == null)
-                    _buildCameraGalleryPrompt(context, isMobile,
-                        isPrimary: true)
-                  else ...[
-                    Stack(
-                      children: [
-                        FadeTransition(
-                          opacity: _fadeAnim,
-                          child: Container(
-                            width: isMobile ? 220 : 320,
-                            height: isMobile ? 220 : 320,
-                            decoration: BoxDecoration(
-                              color: Colors.white.withAlpha(179),
-                              borderRadius: BorderRadius.circular(28),
-                              boxShadow: const [
-                                BoxShadow(
-                                  color: Colors.black12,
-                                  blurRadius: 16,
-                                  offset: Offset(0, 8),
-                                ),
-                              ],
-                            ),
-                            child: ClipRRect(
-                              borderRadius: BorderRadius.circular(28),
-                              child: Image.file(
-                                _primaryImage!,
-                                fit: BoxFit.cover,
-                                width: isMobile ? 220 : 320,
-                                height: isMobile ? 220 : 320,
-                              ),
-                            ),
-                          ),
-                        ),
-                        Positioned(
-                          top: 8,
-                          right: 8,
-                          child: GestureDetector(
-                            onTap: () {
-                              setState(() {
-                                _primaryImage = null;
-                                _detectedAnimalType = null;
-                              });
-                            },
-                            child: Container(
-                              decoration: BoxDecoration(
-                                color: Colors.white,
-                                shape: BoxShape.circle,
-                                boxShadow: [
-                                  BoxShadow(
-                                    color: Colors.black.withOpacity(0.1),
-                                    blurRadius: 4,
-                                    offset: const Offset(0, 2),
-                                  ),
-                                ],
-                              ),
-                              child: const Icon(Icons.close,
-                                  size: 24, color: Colors.red),
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                    // Secondary images row
-                    if (_secondaryImages.isNotEmpty)
-                      SizedBox(
-                        height: 100,
-                        width: double.infinity,
-                        child: ListView.builder(
-                          scrollDirection: Axis.horizontal,
-                          itemCount: _secondaryImages.length,
-                          clipBehavior: Clip.hardEdge,
-                          itemBuilder: (context, index) {
-                            return Stack(
-                              children: [
-                                Container(
-                                  margin: const EdgeInsets.all(8),
-                                  width: 100,
-                                  height: 100,
-                                  child: ClipRRect(
-                                    borderRadius: BorderRadius.circular(16),
-                                    child: Image.file(
-                                      _secondaryImages[index],
-                                      fit: BoxFit.cover,
-                                    ),
-                                  ),
-                                ),
-                                Positioned(
-                                  top: 0,
-                                  right: 0,
-                                  child: GestureDetector(
-                                    onTap: () => _removeSecondaryImage(index),
-                                    child: Container(
-                                      decoration: BoxDecoration(
-                                        color: Colors.white,
-                                        shape: BoxShape.circle,
-                                      ),
-                                      child: const Icon(Icons.close,
-                                          size: 20, color: Colors.red),
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            );
-                          },
-                        ),
-                      ),
-                    // Add secondary image button
-                    Padding(
-                      padding: const EdgeInsets.symmetric(vertical: 8.0),
-                      child: Center(
-                        child: SizedBox(
-                          width: isMobile ? 220 : 320,
-                          child: ElevatedButton.icon(
-                            onPressed: _showAddImageOptions,
-                            icon: const Icon(Icons.add_photo_alternate),
-                            label: const Text('Add More Images',
-                                textAlign: TextAlign.center),
-                            style: ElevatedButton.styleFrom(
-                              alignment: Alignment.center,
-                            ),
-                          ),
-                        ),
-                      ),
-                    ),
-                  ],
-                  const SizedBox(height: 28),
-                  // Map Picker
-                  Container(
-                    width: isMobile ? 280 : 400,
-                    height: isMobile ? 200 : 240,
-                    decoration: BoxDecoration(
-                      color: Colors.white.withAlpha(179),
-                      borderRadius: BorderRadius.circular(28),
-                      boxShadow: const [
-                        BoxShadow(
-                          color: Colors.black12,
-                          blurRadius: 16,
-                          offset: Offset(0, 8),
-                        ),
-                      ],
-                    ),
-                    child: _isLoadingLocation
-                        ? const Center(
-                            child: CircularProgressIndicator(),
-                          )
-                        : _initialMapCenter == null
-                            ? const Center(
-                                child: Text('Could not get location'),
-                              )
-                            : Stack(
-                                children: [
-                                  ClipRRect(
-                                    borderRadius: BorderRadius.circular(28),
-                                    child: GoogleMap(
-                                      initialCameraPosition: CameraPosition(
-                                        target: _initialMapCenter!,
-                                        zoom: 15,
-                                      ),
-                                      onMapCreated: (controller) {
-                                        _mapController = controller;
-                                      },
-                                      onCameraMove: (position) {
-                                        setState(() {
-                                          _pickedLocation = position.target;
-                                        });
-                                      },
-                                      onTap: (LatLng location) {
-                                        setState(() {
-                                          _pickedLocation = location;
-                                        });
-                                        ScaffoldMessenger.of(context)
-                                            .showSnackBar(
-                                          const SnackBar(
-                                            content: Text('Location pinned'),
-                                            duration: Duration(seconds: 1),
-                                          ),
-                                        );
-                                      },
-                                      gestureRecognizers: <Factory<
-                                          OneSequenceGestureRecognizer>>{
-                                        Factory<OneSequenceGestureRecognizer>(
-                                            () => ScaleGestureRecognizer()
-                                              ..onStart =
-                                                  (ScaleStartDetails details) {
-                                                // Smooth zoom start
-                                              }
-                                              ..onUpdate =
-                                                  (ScaleUpdateDetails details) {
-                                                // Smooth zoom update
-                                              }),
-                                      },
-                                      markers: _pickedLocation == null
-                                          ? {}
-                                          : {
-                                              Marker(
-                                                markerId:
-                                                    const MarkerId('picked'),
-                                                position: _pickedLocation!,
-                                                draggable: true,
-                                                onDragEnd:
-                                                    (LatLng newPosition) {
-                                                  setState(() {
-                                                    _pickedLocation =
-                                                        newPosition;
-                                                  });
-                                                },
-                                              ),
-                                            },
-                                      myLocationButtonEnabled: false,
-                                      myLocationEnabled: true,
-                                      zoomControlsEnabled: false,
-                                      zoomGesturesEnabled: true,
-                                      scrollGesturesEnabled: true,
-                                      rotateGesturesEnabled: true,
-                                      tiltGesturesEnabled: true,
-                                      compassEnabled: true,
-                                      mapToolbarEnabled: true,
-                                    ),
-                                  ),
-                                  Positioned(
-                                    bottom: 12,
-                                    right: 12,
-                                    child: Column(
-                                      mainAxisSize: MainAxisSize.min,
-                                      children: [
-                                        FloatingActionButton(
-                                          heroTag: 'gps',
-                                          onPressed: _getCurrentLocation,
-                                          backgroundColor: Theme.of(context)
-                                              .colorScheme
-                                              .primary,
-                                          child: const Icon(Icons.gps_fixed,
-                                              color: Colors.white),
-                                        ),
-                                        const SizedBox(height: 8),
-                                        FloatingActionButton(
-                                          heroTag: 'pin',
-                                          onPressed: () {
-                                            // Pin is already at center, so nothing to do
-                                            ScaffoldMessenger.of(context)
-                                                .showSnackBar(
-                                              const SnackBar(
-                                                content: Text(
-                                                    'Location pinned at center'),
-                                              ),
-                                            );
-                                          },
-                                          backgroundColor: Theme.of(context)
-                                              .colorScheme
-                                              .primary,
-                                          child: const Icon(Icons.place,
-                                              color: Colors.white),
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                ],
-                              ),
-                  ),
-                  const SizedBox(height: 28),
-                  // Animal Type Input
-                  if (_primaryImage != null)
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 16, vertical: 8),
-                      decoration: BoxDecoration(
-                        color: Colors.white.withAlpha(179),
-                        borderRadius: BorderRadius.circular(16),
-                        boxShadow: const [
-                          BoxShadow(
-                            color: Colors.black12,
-                            blurRadius: 16,
-                            offset: Offset(0, 4),
-                          ),
-                        ],
-                      ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Icon(
-                            Icons.pets,
-                            color: Theme.of(context).colorScheme.primary,
-                          ),
-                          const SizedBox(width: 8),
-                          if (_isDetecting)
-                            const SizedBox(
-                              width: 20,
-                              height: 20,
-                              child: CircularProgressIndicator(
-                                strokeWidth: 2,
-                              ),
-                            )
-                          else
-                            Text(
-                              _detectedAnimalType!,
-                              style: const TextStyle(
-                                fontWeight: FontWeight.bold,
-                                fontSize: 16,
-                              ),
-                            ),
-                          const SizedBox(width: 8),
-                          IconButton(
-                            icon: const Icon(Icons.edit, size: 20),
-                            onPressed: _showEditAnimalTypeDialog,
-                            tooltip: 'Edit animal type',
-                          ),
-                        ],
-                      ),
-                    ),
-                  const SizedBox(height: 24),
-                  // Tag Selection
-                  Align(
-                    alignment: Alignment.centerLeft,
-                    child: Padding(
-                      padding: const EdgeInsets.only(left: 4.0, bottom: 8),
-                      child: Text(
-                        'Tags',
-                        style: TextStyle(
-                          fontWeight: FontWeight.bold,
-                          color: Colors.deepPurple[300],
-                          fontSize: 16,
-                        ),
-                      ),
-                    ),
-                  ),
-                  Wrap(
-                    spacing: 12,
-                    runSpacing: 12,
-                    children: [
-                      ..._defaultTags.map((tag) {
-                        final isSelected = _selectedTags.contains(tag);
-                        return FilterChip(
-                          label: Text(tag),
-                          selected: isSelected,
-                          onSelected: (selected) {
-                            setState(() {
-                              if (selected) {
-                                _selectedTags.add(tag);
-                              } else {
-                                _selectedTags.remove(tag);
-                              }
-                            });
-                          },
-                          backgroundColor: Colors.white.withAlpha(179),
-                          selectedColor: Theme.of(context)
-                              .colorScheme
-                              .primary
-                              .withAlpha(51),
-                          checkmarkColor: Theme.of(context).colorScheme.primary,
-                          labelStyle: TextStyle(
-                            color: isSelected
-                                ? Theme.of(context).colorScheme.primary
-                                : Colors.black,
-                            fontWeight: isSelected
-                                ? FontWeight.bold
-                                : FontWeight.normal,
-                          ),
-                        );
-                      }),
-                      ..._customTags.map((tag) {
-                        final isSelected = _selectedTags.contains(tag);
-                        return FilterChip(
-                          label: Text(tag),
-                          selected: isSelected,
-                          onSelected: (selected) {
-                            setState(() {
-                              if (selected) {
-                                _selectedTags.add(tag);
-                              } else {
-                                _selectedTags.remove(tag);
-                              }
-                            });
-                          },
-                          backgroundColor: Colors.white.withAlpha(179),
-                          selectedColor: Theme.of(context)
-                              .colorScheme
-                              .primary
-                              .withAlpha(51),
-                          checkmarkColor: Theme.of(context).colorScheme.primary,
-                          labelStyle: TextStyle(
-                            color: isSelected
-                                ? Theme.of(context).colorScheme.primary
-                                : Colors.black,
-                            fontWeight: isSelected
-                                ? FontWeight.bold
-                                : FontWeight.normal,
-                          ),
-                        );
-                      }),
-                      ActionChip(
-                        label: const Text('Other'),
-                        avatar: const Icon(Icons.add, size: 18),
-                        onPressed: _showAddTagDialog,
-                        backgroundColor: Colors.deepPurple[50],
-                        labelStyle: const TextStyle(color: Colors.deepPurple),
+          child: ListView(
+            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+            children: [
+              // Floating heading at the top
+              Container(
+                margin: const EdgeInsets.only(bottom: 18),
+                alignment: Alignment.center,
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                  decoration: BoxDecoration(
+                    color: Colors.deepPurple.withOpacity(0.85),
+                    borderRadius: BorderRadius.circular(18),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.08),
+                        blurRadius: 12,
+                        offset: const Offset(0, 4),
                       ),
                     ],
                   ),
-                  const SizedBox(height: 24),
-                  // Description Field
-                  Container(
-                    margin: const EdgeInsets.symmetric(vertical: 8),
-                    padding: const EdgeInsets.all(8),
+                  child: const Text(
+                    'New Animal Report',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 22,
+                      letterSpacing: 0.5,
+                      shadows: [
+                        Shadow(
+                          color: Colors.black26,
+                          blurRadius: 8,
+                          offset: Offset(0, 2),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+              // Step 1: Main Image
+              _sectionHeader('1. Add Main Image'),
+              const SizedBox(height: 8),
+              Card(
+                elevation: 4,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                child: GestureDetector(
+                  onTap: () => _pickPrimaryImage(source: ImageSource.gallery),
+                  child: Container(
+                    height: 180,
                     decoration: BoxDecoration(
-                      color: Colors.white.withAlpha(230),
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(
-                        color: Colors.deepPurple.withAlpha(51),
-                        width: 1.2,
-                      ),
+                      color: Colors.grey[100],
+                      borderRadius: BorderRadius.circular(16),
                     ),
-                    child: TextField(
-                      controller: _descriptionController,
-                      maxLines: 3,
-                      decoration: const InputDecoration(
-                        hintText: 'Add a description...',
-                        border: InputBorder.none,
-                        contentPadding: EdgeInsets.all(8),
+                    child: _primaryImage == null
+                        ? Center(
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Icon(Icons.add_a_photo, size: 44, color: Colors.deepPurple[200]),
+                                const SizedBox(height: 8),
+                                Text('Tap to add main photo', style: TextStyle(color: Colors.deepPurple[200])),
+                              ],
+                            ),
+                          )
+                        : Stack(
+                            fit: StackFit.expand,
+                            children: [
+                              ClipRRect(
+                                borderRadius: BorderRadius.circular(16),
+                                child: Image.file(_primaryImage!, fit: BoxFit.cover),
+                              ),
+                              Positioned(
+                                top: 8,
+                                right: 8,
+                                child: GestureDetector(
+                                  onTap: () => setState(() {
+                                    _primaryImage = null;
+                                    _detectedAnimalType = null;
+                                  }),
+                                  child: Container(
+                                    decoration: BoxDecoration(
+                                      color: Colors.white,
+                                      shape: BoxShape.circle,
+                                      boxShadow: [BoxShadow(color: Colors.black12, blurRadius: 4)],
+                                    ),
+                                    child: const Icon(Icons.close, size: 18, color: Colors.red),
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 24),
+              // Step 2: Details
+              _sectionHeader('2. Details'),
+              const SizedBox(height: 8),
+              // Animal Type
+              Row(
+                children: [
+                  const Text('Animal Type:', style: TextStyle(fontWeight: FontWeight.w500, color: Colors.deepPurple)),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: GestureDetector(
+                      onTap: _showEditAnimalTypeDialog,
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                        decoration: BoxDecoration(
+                          color: Colors.grey[100],
+                          borderRadius: BorderRadius.circular(8),
+                          border: Border.all(color: Colors.deepPurple.withOpacity(0.10)),
+                        ),
+                        child: Row(
+                          children: [
+                            Icon(Icons.pets, color: Colors.deepPurple, size: 18),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: Text(
+                                _detectedAnimalType ?? 'Tap to enter',
+                                style: const TextStyle(fontWeight: FontWeight.w500),
+                              ),
+                            ),
+                            const Icon(Icons.edit, size: 16, color: Colors.deepPurple),
+                          ],
+                        ),
                       ),
                     ),
                   ),
-                  const SizedBox(height: 28),
-                  // Submit Button
-                  AnimatedScale(
-                    scale: 1.0,
-                    duration: const Duration(milliseconds: 400),
-                    curve: Curves.elasticOut,
-                    child: ElevatedButton(
-                      onPressed: _submitReport,
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Theme.of(context).colorScheme.primary,
-                        foregroundColor: Colors.white,
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 32, vertical: 16),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(16),
-                        ),
-                      ),
-                      child: const Text(
-                        'Submit',
-                        style: TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 32),
-                  // Add extra padding at the bottom to account for the navigation bar
-                  SizedBox(height: MediaQuery.of(context).padding.bottom + 80),
                 ],
               ),
-            ),
+              const SizedBox(height: 14),
+              // Tags
+              Row(
+                children: [
+                  const Text('Tags:', style: TextStyle(fontWeight: FontWeight.w500, color: Colors.deepPurple)),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Wrap(
+                      spacing: 8,
+                      runSpacing: 4,
+                      children: [
+                        ..._defaultTags.map((tag) {
+                          final isSelected = _selectedTags.contains(tag);
+                          return FilterChip(
+                            label: Text(tag),
+                            selected: isSelected,
+                            onSelected: (selected) {
+                              setState(() {
+                                if (selected) {
+                                  _selectedTags.add(tag);
+                                } else {
+                                  _selectedTags.remove(tag);
+                                }
+                              });
+                            },
+                            backgroundColor: Colors.grey[100],
+                            selectedColor: Colors.deepPurple.withOpacity(0.15),
+                            checkmarkColor: Colors.deepPurple,
+                            labelStyle: TextStyle(
+                              color: isSelected ? Colors.deepPurple : Colors.black,
+                              fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                            ),
+                          );
+                        }),
+                        ..._customTags.map((tag) {
+                          final isSelected = _selectedTags.contains(tag);
+                          return FilterChip(
+                            label: Text(tag),
+                            selected: isSelected,
+                            onSelected: (selected) {
+                              setState(() {
+                                if (selected) {
+                                  _selectedTags.add(tag);
+                                } else {
+                                  _selectedTags.remove(tag);
+                                }
+                              });
+                            },
+                            backgroundColor: Colors.grey[100],
+                            selectedColor: Colors.deepPurple.withOpacity(0.15),
+                            checkmarkColor: Colors.deepPurple,
+                            labelStyle: TextStyle(
+                              color: isSelected ? Colors.deepPurple : Colors.black,
+                              fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                            ),
+                          );
+                        }),
+                        ActionChip(
+                          label: const Text('Add'),
+                          avatar: const Icon(Icons.add, size: 16),
+                          onPressed: _showAddTagDialog,
+                          backgroundColor: Colors.deepPurple[50],
+                          labelStyle: const TextStyle(color: Colors.deepPurple),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 14),
+              // Description
+              TextField(
+                controller: _descriptionController,
+                maxLines: 3,
+                decoration: InputDecoration(
+                  labelText: 'Description (optional)',
+                  filled: true,
+                  fillColor: Colors.grey[100],
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(8),
+                    borderSide: BorderSide(color: Colors.deepPurple.withOpacity(0.10)),
+                  ),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(8),
+                    borderSide: BorderSide(color: Colors.deepPurple.withOpacity(0.10)),
+                  ),
+                  contentPadding: const EdgeInsets.all(12),
+                ),
+              ),
+              const SizedBox(height: 24),
+              // Step 3: Location
+              _sectionHeader('3. Location'),
+              const SizedBox(height: 8),
+              Card(
+                elevation: 3,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                child: Container(
+                  height: 140,
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(14),
+                  ),
+                  child: _isLoadingLocation
+                      ? const Center(child: CircularProgressIndicator())
+                      : _initialMapCenter == null
+                          ? const Center(child: Text('Could not get location'))
+                          : Stack(
+                              children: [
+                                ClipRRect(
+                                  borderRadius: BorderRadius.circular(14),
+                                  child: GoogleMap(
+                                    initialCameraPosition: CameraPosition(
+                                      target: _initialMapCenter!,
+                                      zoom: 15,
+                                    ),
+                                    onMapCreated: (controller) {
+                                      _mapController = controller;
+                                    },
+                                    onCameraMove: (position) {
+                                      setState(() {
+                                        _pickedLocation = position.target;
+                                      });
+                                    },
+                                    onTap: (LatLng location) {
+                                      setState(() {
+                                        _pickedLocation = location;
+                                      });
+                                      ScaffoldMessenger.of(context).showSnackBar(
+                                        const SnackBar(content: Text('Location pinned'), duration: Duration(seconds: 1)),
+                                      );
+                                    },
+                                    markers: _pickedLocation == null
+                                        ? {}
+                                        : {
+                                            Marker(
+                                              markerId: const MarkerId('picked'),
+                                              position: _pickedLocation!,
+                                              draggable: true,
+                                              onDragEnd: (LatLng newPosition) {
+                                                setState(() {
+                                                  _pickedLocation = newPosition;
+                                                });
+                                              },
+                                            ),
+                                          },
+                                    myLocationButtonEnabled: false,
+                                    myLocationEnabled: true,
+                                    zoomControlsEnabled: false,
+                                    zoomGesturesEnabled: true,
+                                    scrollGesturesEnabled: true,
+                                    rotateGesturesEnabled: true,
+                                    tiltGesturesEnabled: true,
+                                    compassEnabled: true,
+                                    mapToolbarEnabled: true,
+                                  ),
+                                ),
+                                Positioned(
+                                  bottom: 8,
+                                  right: 8,
+                                  child: FloatingActionButton(
+                                    heroTag: 'gps',
+                                    mini: true,
+                                    onPressed: _getCurrentLocation,
+                                    backgroundColor: Colors.deepPurple,
+                                    child: const Icon(Icons.gps_fixed, color: Colors.white),
+                                  ),
+                                ),
+                              ],
+                            ),
+                ),
+              ),
+              const SizedBox(height: 24),
+              // Step 4: More Images (Optional)
+              _sectionHeader('4. Add More Images (Optional)'),
+              const SizedBox(height: 8),
+              SizedBox(
+                height: 64,
+                child: ListView(
+                  scrollDirection: Axis.horizontal,
+                  children: [
+                    ..._secondaryImages.asMap().entries.map((entry) {
+                      final idx = entry.key;
+                      final file = entry.value;
+                      return Stack(
+                        children: [
+                          Container(
+                            margin: const EdgeInsets.only(right: 10),
+                            width: 56,
+                            height: 56,
+                            decoration: BoxDecoration(
+                              borderRadius: BorderRadius.circular(10),
+                              border: Border.all(color: Colors.deepPurple.withOpacity(0.10)),
+                              color: Colors.white,
+                              boxShadow: [BoxShadow(color: Colors.deepPurple.withOpacity(0.06), blurRadius: 4, offset: Offset(0,2))],
+                            ),
+                            child: ClipRRect(
+                              borderRadius: BorderRadius.circular(10),
+                              child: Image.file(file, fit: BoxFit.cover),
+                            ),
+                          ),
+                          Positioned(
+                            top: 2,
+                            right: 2,
+                            child: GestureDetector(
+                              onTap: () => _removeSecondaryImage(idx),
+                              child: Container(
+                                decoration: const BoxDecoration(
+                                  color: Colors.white,
+                                  shape: BoxShape.circle,
+                                ),
+                                child: const Icon(Icons.close, size: 14, color: Colors.red),
+                              ),
+                            ),
+                          ),
+                        ],
+                      );
+                    }),
+                    GestureDetector(
+                      onTap: _showAddImageOptions,
+                      child: Container(
+                        width: 56,
+                        height: 56,
+                        decoration: BoxDecoration(
+                          color: Colors.deepPurple.withOpacity(0.07),
+                          borderRadius: BorderRadius.circular(10),
+                          border: Border.all(color: Colors.deepPurple.withOpacity(0.10)),
+                        ),
+                        child: const Icon(Icons.add, color: Colors.deepPurple),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 32),
+              // Submit Button
+              SizedBox(
+                width: double.infinity,
+                height: 48,
+                child: ElevatedButton.icon(
+                  onPressed: _submitReport,
+                  icon: const Icon(Icons.send, color: Colors.white),
+                  label: const Text('Submit', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white)),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.deepPurple,
+                    foregroundColor: Colors.white,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    elevation: 4,
+                    shadowColor: Colors.deepPurple.withOpacity(0.15),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 100),
+            ],
           ),
         ),
       ),
     );
   }
 
-  Widget _buildCameraGalleryPrompt(BuildContext context, bool isMobile,
-      {bool isPrimary = false}) {
-    final double boxWidth = isMobile ? 280 : 400;
-    final double boxHeight = isMobile ? 200 : 240;
-    return Container(
-      width: boxWidth,
-      height: boxHeight,
-      decoration: BoxDecoration(
-        color: Colors.white.withAlpha(77),
-        borderRadius: BorderRadius.circular(24),
-        border: Border.all(
-          color: Theme.of(context).colorScheme.primary.withAlpha(128),
-          width: 2,
-          style: BorderStyle.solid,
-        ),
+  Widget _sectionHeader(String text) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 2),
+      child: Row(
+        children: [
+          Container(
+            width: 4,
+            height: 18,
+            decoration: BoxDecoration(
+              color: Colors.deepPurple,
+              borderRadius: BorderRadius.circular(2),
+            ),
+          ),
+          const SizedBox(width: 8),
+          Text(text, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Colors.deepPurple)),
+        ],
       ),
-      child: DottedBorder(
-        borderType: BorderType.RRect,
-        radius: const Radius.circular(24),
-        dashPattern: const [8, 6],
-        color: Theme.of(context).colorScheme.primary.withAlpha(128),
-        strokeWidth: 2,
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(Icons.camera_alt_rounded,
-                color: Theme.of(context).colorScheme.primary,
-                size: isMobile ? 56 : 72),
-            const SizedBox(height: 12),
-            Text(
-              isPrimary ? 'Add a photo of the animal (Primary)' : 'Add a photo',
-              style: TextStyle(
-                fontWeight: FontWeight.bold,
-                fontSize: isMobile ? 16 : 20,
-                color: Theme.of(context).colorScheme.primary,
-              ),
-            ),
-            const SizedBox(height: 18),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-              children: [
-                Expanded(
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 4.0),
-                    child: ElevatedButton.icon(
-                      onPressed: isPrimary
-                          ? () => _pickPrimaryImage(source: ImageSource.camera)
-                          : () =>
-                              _pickSecondaryImage(source: ImageSource.camera),
-                      icon: const Icon(Icons.camera_alt),
-                      label: const Text('Camera'),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Theme.of(context).colorScheme.primary,
-                        foregroundColor: Colors.white,
-                        padding: EdgeInsets.symmetric(
-                            horizontal: isMobile ? 4 : 8,
-                            vertical: isMobile ? 10 : 14),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(16),
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 4.0),
-                    child: OutlinedButton.icon(
-                      onPressed: isPrimary
-                          ? () => _pickPrimaryImage(source: ImageSource.gallery)
-                          : () =>
-                              _pickSecondaryImage(source: ImageSource.gallery),
-                      icon: const Icon(Icons.photo_library),
-                      label: const Text('Gallery'),
-                      style: OutlinedButton.styleFrom(
-                        foregroundColor: Theme.of(context).colorScheme.primary,
-                        side: BorderSide(
-                            color: Theme.of(context).colorScheme.primary,
-                            width: 2),
-                        padding: EdgeInsets.symmetric(
-                            horizontal: isMobile ? 4 : 8,
-                            vertical: isMobile ? 10 : 14),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(16),
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ],
+    );
+  }
+}
+
+// Glassmorphism Container Widget
+class GlassContainer extends StatelessWidget {
+  final Widget child;
+  final double blur;
+  final Color color;
+  final BorderRadius borderRadius;
+  const GlassContainer({super.key, required this.child, this.blur = 10, this.color = Colors.white24, this.borderRadius = BorderRadius.zero});
+
+  @override
+  Widget build(BuildContext context) {
+    return ClipRRect(
+      borderRadius: borderRadius,
+      child: BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: blur, sigmaY: blur),
+        child: Container(
+          decoration: BoxDecoration(
+            color: color,
+            borderRadius: borderRadius,
+            border: Border.all(color: Colors.white.withOpacity(0.08)),
+          ),
+          child: child,
         ),
       ),
     );
