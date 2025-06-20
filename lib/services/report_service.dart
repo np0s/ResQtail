@@ -4,7 +4,8 @@ import 'package:flutter/foundation.dart';
 import 'package:path_provider/path_provider.dart';
 import '../models/report.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_storage/firebase_storage.dart';
+import 'package:http/http.dart' as http;
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 class ReportService extends ChangeNotifier {
   static const String _reportsFileName = 'reports.json';
@@ -55,23 +56,49 @@ class ReportService extends ChangeNotifier {
     }
   }
 
-  Future<List<String>> _uploadReportImages(String reportId, List<String> imagePaths) async {
-    final storage = FirebaseStorage.instance;
+  Future<List<String>> _uploadReportImagesZipline(List<String> imagePaths) async {
+    const ziplineUrl = 'https://share.p1ng.me/api/upload';
+    final apiKey = dotenv.env['ZIPLINE_API_KEY'];
+    if (apiKey == null || apiKey.isEmpty) {
+      throw Exception('ZIPLINE_API_KEY not set in .env');
+    }
     List<String> downloadUrls = [];
     for (int i = 0; i < imagePaths.length; i++) {
       final file = File(imagePaths[i]);
-      final ref = storage.ref().child('reports/$reportId/image_$i.jpg');
-      final uploadTask = await ref.putFile(file);
-      final url = await uploadTask.ref.getDownloadURL();
-      downloadUrls.add(url);
+      if (!file.existsSync() || file.lengthSync() == 0) {
+        debugPrint('File does not exist or is empty: \\${file.path}');
+        throw Exception('File does not exist or is empty: \\${file.path}');
+      }
+      debugPrint('Uploading report image to Zipline: path=\${imagePaths[i]}');
+      var request = http.MultipartRequest('POST', Uri.parse(ziplineUrl));
+      request.files.add(await http.MultipartFile.fromPath('file', file.path));
+      request.headers['authorization'] = apiKey;
+      var response = await request.send();
+      if (response.statusCode == 200) {
+        final respStr = await response.stream.bytesToString();
+        final url = RegExp(r'"url"\s*:\s*"([^"]+)"').firstMatch(respStr)?.group(1);
+        if (url != null) {
+          debugPrint('Zipline upload success: $url');
+          downloadUrls.add(url);
+        } else {
+          debugPrint('Zipline upload response missing URL: $respStr');
+          throw Exception('Zipline upload response missing URL');
+        }
+      } else {
+        debugPrint('Failed to upload to Zipline: ${response.statusCode}');
+        throw Exception('Failed to upload to Zipline: ${response.statusCode}');
+      }
     }
     return downloadUrls;
   }
 
   Future<void> addReport(Report report) async {
     try {
-      // Upload images to Firebase Storage and get URLs
-      final imageUrls = await _uploadReportImages(report.id, report.imagePaths);
+      debugPrint('addReport: userId=${report.userId}, reportId=${report.id}, imagePaths=${report.imagePaths}');
+      // Upload images to Zipline and get URLs
+      debugPrint('Calling _uploadReportImagesZipline');
+      final imageUrls = await _uploadReportImagesZipline(report.imagePaths);
+      debugPrint('Returned from _uploadReportImagesZipline with imageUrls=$imageUrls');
       final reportWithUrls = Report(
         id: report.id,
         userId: report.userId,
@@ -83,7 +110,9 @@ class ReportService extends ChangeNotifier {
         timestamp: report.timestamp,
         isHelped: report.isHelped,
       );
+      debugPrint('Adding report to Firestore: ${report.id}');
       await _firestore.collection('reports').doc(report.id).set(reportWithUrls.toJson());
+      debugPrint('Report added to Firestore: ${report.id}');
       _reports.add(reportWithUrls);
       notifyListeners();
     } catch (e) {
