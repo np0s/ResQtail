@@ -85,7 +85,6 @@ class _ProfileScreenState extends State<ProfileScreen>
           IconButton(
             icon: const Icon(Icons.logout),
             onPressed: () async {
-              print('Logout button pressed!'); // Debug print
               final shouldLogout = await showDialog<bool>(
                 context: context,
                 builder: (context) => AlertDialog(
@@ -107,6 +106,7 @@ class _ProfileScreenState extends State<ProfileScreen>
               if (shouldLogout == true) {
                 await authService.logout();
                 if (mounted) {
+                  // ignore: use_build_context_synchronously
                   Navigator.of(context).pushNamedAndRemoveUntil(
                     '/login',
                     (route) => false,
@@ -146,7 +146,7 @@ class _ProfileScreenState extends State<ProfileScreen>
                           : null,
                       child:
                           profileImagePath == null || profileImagePath.isEmpty
-                              ? Icon(Icons.person,
+                              ? const Icon(Icons.person,
                                   color: Colors.deepPurple, size: 40)
                               : null,
                     ),
@@ -168,7 +168,7 @@ class _ProfileScreenState extends State<ProfileScreen>
                             userEmail,
                             style: TextStyle(
                               fontSize: 15,
-                              color: Colors.deepPurple.withOpacity(0.7),
+                              color: Colors.deepPurple.withAlpha(170),
                             ),
                           ),
                         ],
@@ -224,14 +224,14 @@ class _ProfileScreenState extends State<ProfileScreen>
                 Icon(
                   Icons.description_outlined,
                   size: 64,
-                  color: Colors.deepPurple.withOpacity(0.5),
+                  color: Colors.deepPurple.withAlpha(128),
                 ),
                 const SizedBox(height: 16),
                 Text(
                   emptyMessage,
                   style: TextStyle(
                     fontSize: 18,
-                    color: Colors.deepPurple.withOpacity(0.7),
+                    color: Colors.deepPurple.withAlpha(170),
                   ),
                 ),
               ],
@@ -320,7 +320,7 @@ class _ProfileScreenState extends State<ProfileScreen>
                                 maxLines: 2,
                                 overflow: TextOverflow.ellipsis,
                                 style: TextStyle(
-                                  color: Colors.deepPurple.withOpacity(0.7),
+                                  color: Colors.deepPurple.withAlpha(170),
                                 ),
                               ),
                               const SizedBox(height: 8),
@@ -329,7 +329,7 @@ class _ProfileScreenState extends State<ProfileScreen>
                                   Icon(
                                     Icons.location_on,
                                     size: 16,
-                                    color: Colors.deepPurple.withOpacity(0.7),
+                                    color: Colors.deepPurple.withAlpha(170),
                                   ),
                                   const SizedBox(width: 4),
                                   Expanded(
@@ -337,7 +337,7 @@ class _ProfileScreenState extends State<ProfileScreen>
                                       '${report.location.latitude.toStringAsFixed(4)}, ${report.location.longitude.toStringAsFixed(4)}',
                                       style: TextStyle(
                                         color:
-                                            Colors.deepPurple.withOpacity(0.7),
+                                            Colors.deepPurple.withAlpha(170),
                                         fontSize: 12,
                                       ),
                                     ),

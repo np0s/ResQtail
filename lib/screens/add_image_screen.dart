@@ -3,11 +3,8 @@ import 'dart:io';
 import 'package:image_picker/image_picker.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:geolocator/geolocator.dart';
-import 'package:dotted_border/dotted_border.dart';
 import 'package:provider/provider.dart';
 import 'package:uuid/uuid.dart';
-import 'package:flutter/gestures.dart';
-import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import '../services/auth_service.dart';
 import '../services/report_service.dart';
@@ -38,16 +35,13 @@ class _AddImageScreenState extends State<AddImageScreen>
   final TextEditingController _descriptionController = TextEditingController();
   String? _detectedAnimalType;
   late AnimationController _animationController;
-  late Animation<double> _fadeAnimation;
   GoogleMapController? _mapController;
   bool _isLoadingLocation = true;
   LatLng? _pickedLocation;
   LatLng? _initialMapCenter;
-  double _cameraCardScale = 1.0;
   final List<String> _customTags = [];
   final AnimalDetectionService _animalDetectionService =
       AnimalDetectionService();
-  bool _isDetecting = false;
 
   @override
   void initState() {
@@ -63,10 +57,6 @@ class _AddImageScreenState extends State<AddImageScreen>
     _animationController = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 900),
-    );
-    _fadeAnimation = CurvedAnimation(
-      parent: _animationController,
-      curve: Curves.easeInOut,
     );
     _animationController.forward();
     _setInitialLocation();
@@ -162,7 +152,6 @@ class _AddImageScreenState extends State<AddImageScreen>
       setState(() {
         _primaryImage = File(pickedFile.path);
         _detectedAnimalType = 'Detecting animal...';
-        _isDetecting = true;
       });
       _animationController.forward(from: 0);
       final detectedAnimal =
@@ -170,7 +159,6 @@ class _AddImageScreenState extends State<AddImageScreen>
       if (mounted) {
         setState(() {
           _detectedAnimalType = detectedAnimal ?? 'Unknown Animal';
-          _isDetecting = false;
         });
       }
     }
@@ -179,7 +167,7 @@ class _AddImageScreenState extends State<AddImageScreen>
   Future<void> _pickSecondaryImage({required ImageSource source}) async {
     if (source == ImageSource.gallery) {
       final pickedFiles = await _picker.pickMultiImage();
-      if (pickedFiles != null && pickedFiles.isNotEmpty) {
+      if (pickedFiles.isNotEmpty) {
         setState(() {
           _secondaryImages.addAll(pickedFiles.map((xfile) => File(xfile.path)));
         });
@@ -388,7 +376,6 @@ class _AddImageScreenState extends State<AddImageScreen>
 
   @override
   Widget build(BuildContext context) {
-    final isMobile = MediaQuery.of(context).size.width < 600;
     return Scaffold(
       extendBody: true,
       body: Container(
@@ -410,11 +397,11 @@ class _AddImageScreenState extends State<AddImageScreen>
                 child: Container(
                   padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
                   decoration: BoxDecoration(
-                    color: Colors.deepPurple.withOpacity(0.85),
+                    color: Colors.deepPurple.withAlpha((0.85*255).toInt()),
                     borderRadius: BorderRadius.circular(18),
                     boxShadow: [
                       BoxShadow(
-                        color: Colors.black.withOpacity(0.08),
+                        color: Colors.black.withAlpha((0.08 * 255).toInt()),
                         blurRadius: 12,
                         offset: const Offset(0, 4),
                       ),
@@ -479,10 +466,10 @@ class _AddImageScreenState extends State<AddImageScreen>
                                     _detectedAnimalType = null;
                                   }),
                                   child: Container(
-                                    decoration: BoxDecoration(
+                                    decoration: const BoxDecoration(
                                       color: Colors.white,
                                       shape: BoxShape.circle,
-                                      boxShadow: [BoxShadow(color: Colors.black12, blurRadius: 4)],
+                                      boxShadow: [BoxShadow(color: Color.fromARGB(20, 0, 0, 0), blurRadius: 4)],
                                     ),
                                     child: const Icon(Icons.close, size: 18, color: Colors.red),
                                   ),
@@ -510,11 +497,11 @@ class _AddImageScreenState extends State<AddImageScreen>
                         decoration: BoxDecoration(
                           color: Colors.grey[100],
                           borderRadius: BorderRadius.circular(8),
-                          border: Border.all(color: Colors.deepPurple.withOpacity(0.10)),
+                          border: Border.all(color: Colors.deepPurple.withAlpha((0.10*255).toInt())),
                         ),
                         child: Row(
                           children: [
-                            Icon(Icons.pets, color: Colors.deepPurple, size: 18),
+                            const Icon(Icons.pets, color: Colors.deepPurple, size: 18),
                             const SizedBox(width: 8),
                             Expanded(
                               child: Text(
@@ -556,7 +543,7 @@ class _AddImageScreenState extends State<AddImageScreen>
                               });
                             },
                             backgroundColor: Colors.grey[100],
-                            selectedColor: Colors.deepPurple.withOpacity(0.15),
+                            selectedColor: Colors.deepPurple.withAlpha((0.15*255).toInt()),
                             checkmarkColor: Colors.deepPurple,
                             labelStyle: TextStyle(
                               color: isSelected ? Colors.deepPurple : Colors.black,
@@ -579,7 +566,7 @@ class _AddImageScreenState extends State<AddImageScreen>
                               });
                             },
                             backgroundColor: Colors.grey[100],
-                            selectedColor: Colors.deepPurple.withOpacity(0.15),
+                            selectedColor: Colors.deepPurple.withAlpha((0.15*255).toInt()),
                             checkmarkColor: Colors.deepPurple,
                             labelStyle: TextStyle(
                               color: isSelected ? Colors.deepPurple : Colors.black,
@@ -610,11 +597,11 @@ class _AddImageScreenState extends State<AddImageScreen>
                   fillColor: Colors.grey[100],
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(8),
-                    borderSide: BorderSide(color: Colors.deepPurple.withOpacity(0.10)),
+                    borderSide: BorderSide(color: Colors.deepPurple.withAlpha((0.10*255).toInt())),
                   ),
                   enabledBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(8),
-                    borderSide: BorderSide(color: Colors.deepPurple.withOpacity(0.10)),
+                    borderSide: BorderSide(color: Colors.deepPurple.withAlpha((0.10*255).toInt())),
                   ),
                   contentPadding: const EdgeInsets.all(12),
                 ),
@@ -727,8 +714,8 @@ class _AddImageScreenState extends State<AddImageScreen>
                                                 }
                                               }
                                             },
-                                            child: const Icon(Icons.open_in_full, color: Colors.white),
                                             tooltip: 'Open Full Map',
+                                            child: const Icon(Icons.open_in_full, color: Colors.white),
                                           ),
                                         ),
                                       ],
@@ -767,9 +754,9 @@ class _AddImageScreenState extends State<AddImageScreen>
                             height: 56,
                             decoration: BoxDecoration(
                               borderRadius: BorderRadius.circular(10),
-                              border: Border.all(color: Colors.deepPurple.withOpacity(0.10)),
+                              border: Border.all(color: Colors.deepPurple.withAlpha((0.10*255).toInt())),
                               color: Colors.white,
-                              boxShadow: [BoxShadow(color: Colors.deepPurple.withOpacity(0.06), blurRadius: 4, offset: Offset(0,2))],
+                              boxShadow: [BoxShadow(color: Colors.deepPurple.withAlpha((0.06*255).toInt()), blurRadius: 4, offset: const Offset(0,2))],
                             ),
                             child: ClipRRect(
                               borderRadius: BorderRadius.circular(10),
@@ -799,9 +786,9 @@ class _AddImageScreenState extends State<AddImageScreen>
                         width: 56,
                         height: 56,
                         decoration: BoxDecoration(
-                          color: Colors.deepPurple.withOpacity(0.07),
+                          color: Colors.deepPurple.withAlpha((0.07*255).toInt()),
                           borderRadius: BorderRadius.circular(10),
-                          border: Border.all(color: Colors.deepPurple.withOpacity(0.10)),
+                          border: Border.all(color: Colors.deepPurple.withAlpha((0.10*255).toInt())),
                         ),
                         child: const Icon(Icons.add, color: Colors.deepPurple),
                       ),
@@ -825,7 +812,7 @@ class _AddImageScreenState extends State<AddImageScreen>
                       borderRadius: BorderRadius.circular(10),
                     ),
                     elevation: 4,
-                    shadowColor: Colors.deepPurple.withOpacity(0.15),
+                    shadowColor: Colors.deepPurple.withAlpha((0.15*255).toInt()),
                   ),
                 ),
               ),
@@ -876,7 +863,7 @@ class GlassContainer extends StatelessWidget {
           decoration: BoxDecoration(
             color: color,
             borderRadius: borderRadius,
-            border: Border.all(color: Colors.white.withOpacity(0.08)),
+            border: Border.all(color: const Color.fromARGB(20, 255, 255, 255)),
           ),
           child: child,
         ),

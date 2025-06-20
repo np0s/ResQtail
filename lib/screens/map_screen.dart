@@ -4,7 +4,6 @@ import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:provider/provider.dart';
-import 'package:url_launcher/url_launcher.dart';
 import 'dart:io';
 import '../services/report_service.dart';
 import '../models/report.dart';
@@ -164,19 +163,6 @@ class _MapScreenState extends State<MapScreen>
     _animationController.forward();
   }
 
-  Future<void> _openInMaps(LatLng location) async {
-    final url =
-        'https://www.google.com/maps/search/?api=1&query=${location.latitude},${location.longitude}';
-    if (await canLaunchUrl(Uri.parse(url))) {
-      await launchUrl(Uri.parse(url));
-    } else {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Could not open maps')),
-        );
-      }
-    }
-  }
 
   void _closeDetails() {
     _animationController.reverse().then((_) {
@@ -190,9 +176,9 @@ class _MapScreenState extends State<MapScreen>
   @override
   Widget build(BuildContext context) {
     if (_isLoading) {
-      return Scaffold(
+      return const Scaffold(
         extendBodyBehindAppBar: true,
-        body: const Center(
+        body: Center(
           child: CircularProgressIndicator(),
         ),
       );
@@ -382,7 +368,7 @@ class _MapScreenState extends State<MapScreen>
                                               color: Theme.of(context)
                                                   .colorScheme
                                                   .primary
-                                                  .withOpacity(0.1),
+                                                  .withAlpha((0.1*255).toInt()),
                                               borderRadius:
                                                   BorderRadius.circular(16),
                                             ),
@@ -442,7 +428,7 @@ class _MapScreenState extends State<MapScreen>
                               Container(
                                 padding: const EdgeInsets.all(12),
                                 decoration: BoxDecoration(
-                                  color: Colors.white.withOpacity(0.7),
+                                  color: Colors.white.withAlpha((0.7*255).toInt()),
                                   borderRadius: BorderRadius.circular(12),
                                 ),
                                 child: Column(
@@ -452,7 +438,7 @@ class _MapScreenState extends State<MapScreen>
                                         Icon(
                                           Icons.email,
                                           color: Colors.deepPurple
-                                              .withOpacity(0.7),
+                                              .withAlpha((0.7*255).toInt()),
                                           size: 20,
                                         ),
                                         const SizedBox(width: 8),
@@ -462,7 +448,7 @@ class _MapScreenState extends State<MapScreen>
                                                 'No email available',
                                             style: TextStyle(
                                               color: Colors.deepPurple
-                                                  .withOpacity(0.7),
+                                                  .withAlpha((0.7*255).toInt()),
                                               fontSize: 14,
                                             ),
                                           ),
@@ -478,7 +464,7 @@ class _MapScreenState extends State<MapScreen>
                                           Icon(
                                             Icons.phone,
                                             color: Colors.deepPurple
-                                                .withOpacity(0.7),
+                                                .withAlpha((0.7*255).toInt()),
                                             size: 20,
                                           ),
                                           const SizedBox(width: 8),
@@ -490,7 +476,7 @@ class _MapScreenState extends State<MapScreen>
                                                   'No phone available',
                                               style: TextStyle(
                                                 color: Colors.deepPurple
-                                                    .withOpacity(0.7),
+                                                    .withAlpha((0.7*255).toInt()),
                                                 fontSize: 14,
                                               ),
                                             ),

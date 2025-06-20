@@ -19,7 +19,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
   bool _isEditingPhone = false;
   String? _phoneNumber;
   bool _isPhoneVisible = true;
-  String? _profileImageUrl;
   bool _isLoading = false;
   final ImagePicker _picker = ImagePicker();
   bool _isPhoneValid = true;
@@ -48,9 +47,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
         _usernameController.text = authService.username ?? '';
         _phoneNumber = authService.phoneNumber;
         _isPhoneVisible = authService.showPhoneNumber;
-        _profileImageUrl = authService.profileImagePath;
       });
     } catch (e) {
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Error loading user data: $e')),
       );
@@ -71,7 +70,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
   Future<void> _pickImage() async {
     final XFile? image = await _picker.pickImage(source: ImageSource.gallery);
     if (image != null) {
+      // ignore: use_build_context_synchronously
       await context.read<AuthService>().setProfileImagePath(image.path);
+      if (!mounted) return;
       await _loadUserData();
     }
   }
@@ -87,7 +88,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.7),
+        color: Colors.white.withAlpha(128),
         borderRadius: BorderRadius.circular(12),
       ),
       child: Column(
@@ -164,7 +165,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.7),
+        color: Colors.white.withAlpha(128),
         borderRadius: BorderRadius.circular(12),
       ),
       child: Column(
@@ -183,7 +184,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
             children: [
               Icon(
                 Icons.person,
-                color: Colors.deepPurple.withOpacity(0.7),
+                color: Colors.deepPurple.withAlpha(179),
               ),
               const SizedBox(width: 12),
               Expanded(
@@ -204,7 +205,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     : Text(
                         _usernameController.text,
                         style: TextStyle(
-                          color: Colors.deepPurple.withOpacity(0.7),
+                          color: Colors.deepPurple.withAlpha(179),
                           fontSize: 16,
                         ),
                       ),
@@ -248,12 +249,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
         border: Border.all(
           color: _isEditingPhone
               ? (_isPhoneValid ? Colors.green : Colors.red)
-              : Colors.deepPurple.withOpacity(0.3),
+              : Colors.deepPurple.withAlpha(77),
           width: 1.5,
         ),
         boxShadow: [
           BoxShadow(
-            color: Colors.deepPurple.withOpacity(0.08),
+            color: Colors.deepPurple.withAlpha(16),
             blurRadius: 4,
             offset: const Offset(0, 2),
           ),
@@ -264,7 +265,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           ListTile(
             leading: Icon(
               Icons.phone,
-              color: Colors.deepPurple.withOpacity(0.7),
+              color: Colors.deepPurple.withAlpha(179),
             ),
             title: _isEditingPhone
                 ? TextField(
@@ -290,7 +291,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 : Text(
                     authService.phoneNumber ?? 'No phone number',
                     style: TextStyle(
-                      color: Colors.deepPurple.withOpacity(0.7),
+                      color: Colors.deepPurple.withAlpha(179),
                       fontSize: 16,
                       fontWeight: FontWeight.w500,
                     ),

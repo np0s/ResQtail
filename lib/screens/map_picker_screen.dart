@@ -11,7 +11,6 @@ class MapPickerScreen extends StatefulWidget {
 
 class _MapPickerScreenState extends State<MapPickerScreen> {
   late LatLng _pickedLocation;
-  GoogleMapController? _mapController;
 
   @override
   void initState() {
@@ -43,7 +42,7 @@ class _MapPickerScreenState extends State<MapPickerScreen> {
               target: _pickedLocation,
               zoom: 15,
             ),
-            onMapCreated: (controller) => _mapController = controller,
+            onMapCreated: (controller) => _onMapTap(const LatLng(0, 0)),
             onTap: _onMapTap,
             markers: {
               Marker(

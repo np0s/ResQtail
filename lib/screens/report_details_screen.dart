@@ -106,10 +106,10 @@ class _ReportDetailsScreenState extends State<ReportDetailsScreen> {
                                             ? Theme.of(context)
                                                 .colorScheme
                                                 .primary
-                                            : Colors.white.withOpacity(0.7),
+                                            : Colors.white.withAlpha(170),
                                         shape: BoxShape.circle,
                                         border: Border.all(
-                                          color: Colors.black.withOpacity(0.15),
+                                          color: Colors.black.withAlpha(24),
                                           width: 1.2,
                                         ),
                                       ),
@@ -166,7 +166,7 @@ class _ReportDetailsScreenState extends State<ReportDetailsScreen> {
                         Container(
                           padding: const EdgeInsets.all(16),
                           decoration: BoxDecoration(
-                            color: Colors.white.withOpacity(0.7),
+                            color: Colors.white.withAlpha(170),
                             borderRadius: BorderRadius.circular(12),
                           ),
                           child: Text(
@@ -199,7 +199,7 @@ class _ReportDetailsScreenState extends State<ReportDetailsScreen> {
                               color: Theme.of(context)
                                   .colorScheme
                                   .primary
-                                  .withOpacity(0.1),
+                                  .withAlpha(170),
                               borderRadius: BorderRadius.circular(20),
                             ),
                             child: Text(
@@ -228,7 +228,7 @@ class _ReportDetailsScreenState extends State<ReportDetailsScreen> {
                         decoration: BoxDecoration(
                           borderRadius: BorderRadius.circular(12),
                           border: Border.all(
-                            color: Colors.deepPurple.withOpacity(0.3),
+                            color: Colors.deepPurple.withAlpha(76),
                           ),
                         ),
                         child: ClipRRect(
@@ -283,7 +283,7 @@ class _ReportDetailsScreenState extends State<ReportDetailsScreen> {
                       Container(
                         padding: const EdgeInsets.all(16),
                         decoration: BoxDecoration(
-                          color: Colors.white.withOpacity(0.7),
+                          color: Colors.white.withAlpha(170),
                           borderRadius: BorderRadius.circular(12),
                         ),
                         child: Column(
@@ -293,13 +293,13 @@ class _ReportDetailsScreenState extends State<ReportDetailsScreen> {
                               children: [
                                 Icon(
                                   Icons.email,
-                                  color: Colors.deepPurple.withOpacity(0.7),
+                                  color: Colors.deepPurple.withAlpha(170),
                                 ),
                                 const SizedBox(width: 12),
                                 Text(
                                   authService.email ?? 'No email available',
                                   style: TextStyle(
-                                    color: Colors.deepPurple.withOpacity(0.7),
+                                    color: Colors.deepPurple.withAlpha(170),
                                     fontSize: 16,
                                   ),
                                 ),
@@ -311,14 +311,14 @@ class _ReportDetailsScreenState extends State<ReportDetailsScreen> {
                                 children: [
                                   Icon(
                                     Icons.phone,
-                                    color: Colors.deepPurple.withOpacity(0.7),
+                                    color: Colors.deepPurple.withAlpha(170),
                                   ),
                                   const SizedBox(width: 12),
                                   Text(
                                     authService.phoneNumber ??
                                         'No phone available',
                                     style: TextStyle(
-                                      color: Colors.deepPurple.withOpacity(0.7),
+                                      color: Colors.deepPurple.withAlpha(170),
                                       fontSize: 16,
                                     ),
                                   ),
@@ -333,20 +333,20 @@ class _ReportDetailsScreenState extends State<ReportDetailsScreen> {
                       Container(
                         padding: const EdgeInsets.all(16),
                         decoration: BoxDecoration(
-                          color: Colors.white.withOpacity(0.7),
+                          color: Colors.white.withAlpha(170),
                           borderRadius: BorderRadius.circular(12),
                         ),
                         child: Row(
                           children: [
                             Icon(
                               Icons.access_time,
-                              color: Colors.deepPurple.withOpacity(0.7),
+                              color: Colors.deepPurple.withAlpha(76),
                             ),
                             const SizedBox(width: 12),
                             Text(
                               'Reported on ${report.timestamp.toString().split('.')[0]}',
                               style: TextStyle(
-                                color: Colors.deepPurple.withOpacity(0.7),
+                                color: Colors.deepPurple.withAlpha(76),
                                 fontSize: 16,
                               ),
                             ),
