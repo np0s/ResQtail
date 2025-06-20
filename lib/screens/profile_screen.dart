@@ -142,7 +142,9 @@ class _ProfileScreenState extends State<ProfileScreen>
                       backgroundColor: Colors.deepPurple[100],
                       backgroundImage: profileImagePath != null &&
                               profileImagePath.isNotEmpty
-                          ? FileImage(File(profileImagePath))
+                          ? (profileImagePath.startsWith('http')
+                              ? NetworkImage(profileImagePath) as ImageProvider<Object>
+                              : FileImage(File(profileImagePath)) as ImageProvider<Object>)
                           : null,
                       child:
                           profileImagePath == null || profileImagePath.isEmpty
@@ -263,12 +265,11 @@ class _ProfileScreenState extends State<ProfileScreen>
                         ClipRRect(
                           borderRadius: BorderRadius.circular(12),
                           child: report.imagePaths.isNotEmpty
-                              ? Image.file(
-                                  File(report.imagePaths[0]),
-                                  width: 80,
-                                  height: 80,
-                                  fit: BoxFit.cover,
-                                )
+                              ? (report.imagePaths[0].startsWith('http')
+                                  ? Image.network(report.imagePaths[0],
+                                      width: 80, height: 80, fit: BoxFit.cover)
+                                  : Image.file(File(report.imagePaths[0]),
+                                      width: 80, height: 80, fit: BoxFit.cover))
                               : Container(
                                   width: 80,
                                   height: 80,

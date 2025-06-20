@@ -23,13 +23,11 @@ class AnimalDetectionService {
   // Initialize method - no longer needed for API but kept for compatibility
   Future<void> initialize() async {
     // Nothing to initialize for API-based implementation
-    debugPrint('AnimalDetectionService initialized with ${_currentAPI.name}');
   }
 
   // Dispose method - no longer needed for API but kept for compatibility
   void dispose() {
     // Nothing to dispose for API-based implementation
-    debugPrint('AnimalDetectionService disposed');
   }
 
   Future<String?> detectAnimal(File imageFile) async {
@@ -45,7 +43,6 @@ class AnimalDetectionService {
     try {
       final apiKey = dotenv.env['HUGGINGFACE_API_KEY'];
       if (apiKey == null) {
-        debugPrint('Hugging Face API key not found in .env');
         return null;
       }
 
@@ -68,12 +65,6 @@ class AnimalDetectionService {
       if (response.statusCode == 200) {
         final List<dynamic> predictions = json.decode(response.body);
         
-        debugPrint('Top 5 predictions:');
-        for (int i = 0; i < 5 && i < predictions.length; i++) {
-          final prediction = predictions[i];
-          debugPrint('$i: ${prediction['label']} (confidence: ${prediction['score']})');
-        }
-
         // Check if any of the predictions match our animal categories
         for (final prediction in predictions) {
           final label = prediction['label'].toString().toLowerCase();
@@ -82,7 +73,6 @@ class AnimalDetectionService {
           // Check if the label contains any of our animal categories
           for (final animal in _animalCategories) {
             if (label.contains(animal)) {
-              debugPrint('Found animal: $animal (from $label) with confidence $confidence');
               if (confidence >= _confidenceThreshold) {
                 return animal;
               }
@@ -92,8 +82,6 @@ class AnimalDetectionService {
 
         return 'unknown';
       } else {
-        debugPrint('Hugging Face API error: ${response.statusCode}');
-        debugPrint('Response body: ${response.body}');
         return null;
       }
     } catch (e) {
@@ -107,7 +95,6 @@ class AnimalDetectionService {
       final apiKey = dotenv.env['IMAGGA_API_KEY'];
       final apiSecret = dotenv.env['IMAGGA_API_SECRET'];
       if (apiKey == null || apiSecret == null) {
-        debugPrint('Imagga API credentials not found in .env');
         return null;
       }
 
@@ -127,18 +114,11 @@ class AnimalDetectionService {
         final data = json.decode(responseBody);
         final tags = data['result']['tags'] as List;
 
-        debugPrint('Top 5 predictions:');
-        for (int i = 0; i < 5 && i < tags.length; i++) {
-          final tag = tags[i];
-          debugPrint('$i: ${tag['tag']['en']} (confidence: ${tag['confidence']})');
-        }
-
         for (final tag in tags) {
           final label = tag['tag']['en'].toString().toLowerCase();
           final confidence = tag['confidence'] as num;
           for (final animal in _animalCategories) {
             if (label.contains(animal)) {
-              debugPrint('Found animal: $animal (from $label) with confidence $confidence');
               if (confidence >= _confidenceThreshold * 100) { // Imagga uses 0-100 scale
                 return animal;
               }
@@ -147,7 +127,6 @@ class AnimalDetectionService {
         }
         return 'unknown';
       } else {
-        debugPrint('Imagga API error: ${response.statusCode}');
         return null;
       }
     } catch (e) {

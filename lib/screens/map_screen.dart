@@ -333,15 +333,11 @@ class _MapScreenState extends State<MapScreen>
                                 children: [
                                   ClipRRect(
                                     borderRadius: BorderRadius.circular(12),
-                                    child: Image.file(
-                                      File(
-                                          _selectedReport!.imagePaths.isNotEmpty
-                                              ? _selectedReport!.imagePaths[0]
-                                              : ''),
-                                      width: 64,
-                                      height: 64,
-                                      fit: BoxFit.cover,
-                                    ),
+                                    child: _selectedReport!.imagePaths.isNotEmpty
+                                        ? (_selectedReport!.imagePaths[0].startsWith('http')
+                                            ? Image.network(_selectedReport!.imagePaths[0], width: 64, height: 64, fit: BoxFit.cover)
+                                            : Image.file(File(_selectedReport!.imagePaths[0]), width: 64, height: 64, fit: BoxFit.cover))
+                                        : Container(width: 64, height: 64, color: Colors.grey[300]),
                                   ),
                                   const SizedBox(width: 16),
                                   Expanded(
