@@ -101,6 +101,9 @@ class ReportService extends ChangeNotifier {
         location: report.location,
         timestamp: report.timestamp,
         isHelped: report.isHelped,
+        email: report.email,
+        phoneNumber: report.phoneNumber,
+        showPhoneNumber: report.showPhoneNumber,
       );
       await _firestore.collection('reports').doc(report.id).set(reportWithUrls.toJson());
       _reports.add(reportWithUrls);
@@ -141,6 +144,9 @@ class ReportService extends ChangeNotifier {
         location: report.location,
         timestamp: report.timestamp,
         isHelped: true,
+        email: report.email,
+        phoneNumber: report.phoneNumber,
+        showPhoneNumber: report.showPhoneNumber,
       );
       try {
         await _firestore.collection('reports').doc(reportId).update({'isHelped': true});
