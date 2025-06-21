@@ -440,7 +440,7 @@ class _MapScreenState extends State<MapScreen>
                                         const SizedBox(width: 8),
                                         Expanded(
                                           child: Text(
-                                            context.read<AuthService>().email ??
+                                            _selectedReport!.email ??
                                                 'No email available',
                                             style: TextStyle(
                                               color: Colors.deepPurple
@@ -451,9 +451,8 @@ class _MapScreenState extends State<MapScreen>
                                         ),
                                       ],
                                     ),
-                                    if (context
-                                        .read<AuthService>()
-                                        .showPhoneNumber) ...[
+                                    if (_selectedReport!.showPhoneNumber == true && 
+                                        (_selectedReport!.phoneNumber?.isNotEmpty ?? false)) ...[
                                       const SizedBox(height: 8),
                                       Row(
                                         children: [
@@ -466,9 +465,7 @@ class _MapScreenState extends State<MapScreen>
                                           const SizedBox(width: 8),
                                           Expanded(
                                             child: Text(
-                                              context
-                                                      .read<AuthService>()
-                                                      .phoneNumber ??
+                                              _selectedReport!.phoneNumber ??
                                                   'No phone available',
                                               style: TextStyle(
                                                 color: Colors.deepPurple
