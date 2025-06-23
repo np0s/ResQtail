@@ -14,9 +14,10 @@ ResQtail is a cross-platform Flutter application designed for pet rescue and man
 - **Multi-Platform Support:** Available for Android, iOS, web, Windows, macOS, and Linux.
 
 ## Screenshots
-<!-- Add screenshots of the app below. Example: -->
-<!-- ![Home Screen](assets/screenshots/home.png) -->
-<!-- ![Map Screen](assets/screenshots/map.png) -->
+
+[Report Screen](assets/screenshots/report.jpg) 
+[Report Screen](assets/screenshots/report.jpg) 
+[Map Screen](assets/screenshots/map.jpg)
 
 ## How It Works
 1. **Sign Up & Verify:** Register with your email and phone number, then verify your email.
