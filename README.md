@@ -15,9 +15,62 @@ ResQtail is a cross-platform Flutter application designed for pet rescue and man
 
 ## Screenshots
 
-[Report Screen](assets/screenshots/report.jpg) 
-[Report Screen](assets/screenshots/report.jpg) 
-[Map Screen](assets/screenshots/map.jpg)
+<!-- Report Screens -->
+<div align="center">
+<table>
+  <tr>
+    <td align="center">
+      <img src="assets/screenshots/report.jpg" alt="Report Screen 1" width="200"/>
+    </td>
+    <td align="center">
+      <img src="assets/screenshots/report2.jpg" alt="Report Screen 2" width="200"/>
+    </td>
+  </tr>
+  <tr>
+    <td colspan="2" align="center"><b>Report Screen</b></td>
+  </tr>
+</table>
+</div>
+
+<!-- Map Screens -->
+<div align="center">
+<table>
+  <tr>
+    <td align="center">
+      <img src="assets/screenshots/map.jpg" alt="Map Screen" width="200"/>
+    </td>
+    <td align="center">
+      <img src="assets/screenshots/map_pins.jpg" alt="Maps Pins" width="200"/>
+    </td>
+    <td align="center">
+      <img src="assets/screenshots/details.jpg" alt="Details" width="200"/>
+    </td>
+  </tr>
+  <tr>
+    <td colspan="3" align="center"><b>Map Screen with View Details</b></td>
+  </tr>
+</table>
+</div>
+
+<!-- Profile Screens -->
+<div align="center">
+<table>
+  <tr>
+    <td align="center">
+      <img src="assets/screenshots/profile_helped.jpg" alt="Profile Helped" width="200"/>
+    </td>
+    <td align="center">
+      <img src="assets/screenshots/profile_report.jpg" alt="Profile Report" width="200"/>
+    </td>
+    <td align="center">
+      <img src="assets/screenshots/setting.jpg" alt="Settings" width="200"/>
+    </td>
+  </tr>
+  <tr>
+    <td colspan="3" align="center"><b>Profile Screen</b></td>
+  </tr>
+</table>
+</div>
 
 ## How It Works
 1. **Sign Up & Verify:** Register with your email and phone number, then verify your email.
