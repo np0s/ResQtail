@@ -72,11 +72,11 @@ class _ChatScreenState extends State<ChatScreen> {
               ),
               placeholder: (context, url) => const CircleAvatar(
                 radius: 20,
-                backgroundImage: NetworkImage('https://api.dicebear.com/7.x/thumbs/png?seed=placeholder'),
+                backgroundImage: AssetImage('assets/logo.png'),
               ),
               errorWidget: (context, url, error) => const CircleAvatar(
                 radius: 20,
-                backgroundImage: NetworkImage('https://api.dicebear.com/7.x/thumbs/png?seed=placeholder'),
+                backgroundImage: AssetImage('assets/logo.png'),
               ),
             ),
             const SizedBox(width: 12),
