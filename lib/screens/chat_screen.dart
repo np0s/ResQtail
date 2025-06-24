@@ -62,6 +62,7 @@ class _ChatScreenState extends State<ChatScreen> {
     final profileImagePath = cachedProfileImagePath ?? 'https://api.dicebear.com/7.x/thumbs/png?seed=placeholder';
     return Scaffold(
       appBar: AppBar(
+        elevation: 2,
         title: Row(
           children: [
             CachedNetworkImage(
@@ -86,57 +87,124 @@ class _ChatScreenState extends State<ChatScreen> {
         backgroundColor: Colors.deepPurple,
         foregroundColor: Colors.white,
       ),
-      body: Column(
-        children: [
-          Expanded(
-            child: StreamBuilder<List<Message>>(
-              stream: chatService.getChatMessages(widget.chatId),
-              builder: (context, snapshot) {
-                if (!snapshot.hasData) {
-                  return const Center(child: CircularProgressIndicator());
-                }
-                final messages = snapshot.data!;
-                if (messages.isEmpty) {
-                  return Center(
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(Icons.chat_bubble_outline, size: 64, color: Colors.deepPurple.withAlpha(120)),
-                        const SizedBox(height: 16),
-                        const Text('No messages yet.', style: TextStyle(fontSize: 18, color: Colors.deepPurple)),
-                      ],
-                    ),
-                  );
-                }
-                WidgetsBinding.instance.addPostFrameCallback((_) => _scrollToBottom());
-                return ListView.builder(
-                  controller: _scrollController,
-                  itemCount: messages.length,
-                  itemBuilder: (context, index) {
-                    final msg = messages[index];
-                    final isMe = msg.senderId == userId;
-                    return Container(
-                      margin: const EdgeInsets.symmetric(vertical: 4, horizontal: 8),
+      body: Container(
+        decoration: const BoxDecoration(
+          gradient: LinearGradient(
+            colors: [Color(0xFFF3E5F5), Color(0xFFE1BEE7)],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
+        ),
+        child: Column(
+          children: [
+            Expanded(
+              child: StreamBuilder<List<Message>>(
+                stream: chatService.getChatMessages(widget.chatId),
+                builder: (context, snapshot) {
+                  if (!snapshot.hasData) {
+                    return const Center(child: CircularProgressIndicator());
+                  }
+                  final messages = snapshot.data!;
+                  if (messages.isEmpty) {
+                    return Center(
                       child: Column(
-                        crossAxisAlignment:
-                            isMe ? CrossAxisAlignment.end : CrossAxisAlignment.start,
+                        mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          Container(
-                            padding: const EdgeInsets.all(12),
-                            decoration: BoxDecoration(
-                              color: isMe ? Colors.blue[100] : Colors.grey[300],
-                              borderRadius: BorderRadius.only(
-                                topLeft: const Radius.circular(12),
-                                topRight: const Radius.circular(12),
-                                bottomLeft: Radius.circular(isMe ? 12 : 0),
-                                bottomRight: Radius.circular(isMe ? 0 : 12),
+                          Icon(Icons.chat_bubble_outline, size: 64, color: Colors.deepPurple.withAlpha(120)),
+                          const SizedBox(height: 16),
+                          const Text('No messages yet.', style: TextStyle(fontSize: 18, color: Colors.deepPurple)),
+                        ],
+                      ),
+                    );
+                  }
+                  WidgetsBinding.instance.addPostFrameCallback((_) => _scrollToBottom());
+                  // Group messages by calendar day
+                  List<Widget> messageWidgets = [];
+                  DateTime? lastDate;
+                  for (int i = 0; i < messages.length; i++) {
+                    final msg = messages[i];
+                    final isMe = msg.senderId == userId;
+                    final msgDate = msg.timestamp.toDate();
+                    final msgDay = DateTime(msgDate.year, msgDate.month, msgDate.day);
+                    if (lastDate == null || !_isSameDay(msgDay, lastDate)) {
+                      messageWidgets.add(
+                        Padding(
+                          padding: const EdgeInsets.symmetric(vertical: 12),
+                          child: Center(
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+                              decoration: BoxDecoration(
+                                color: Colors.deepPurple.withAlpha(30),
+                                borderRadius: BorderRadius.circular(16),
+                              ),
+                              child: Text(
+                                _formatDateSeparator(msgDay),
+                                style: const TextStyle(fontSize: 13, color: Colors.deepPurple, fontWeight: FontWeight.w500),
                               ),
                             ),
-                            child: msg.imageUrl != null && msg.imageUrl!.isNotEmpty
-                                ? Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
-                                    children: [
-                                      CachedNetworkImage(
+                          ),
+                        ),
+                      );
+                      lastDate = msgDay;
+                    }
+                    messageWidgets.add(
+                      Row(
+                        mainAxisAlignment: isMe ? MainAxisAlignment.end : MainAxisAlignment.start,
+                        crossAxisAlignment: CrossAxisAlignment.end,
+                        children: [
+                          if (!isMe)
+                            Padding(
+                              padding: const EdgeInsets.only(right: 8, bottom: 2),
+                              child: CachedNetworkImage(
+                                imageUrl: profileImagePath,
+                                imageBuilder: (context, imageProvider) => CircleAvatar(
+                                  radius: 16,
+                                  backgroundImage: imageProvider,
+                                ),
+                                placeholder: (context, url) => const CircleAvatar(
+                                  radius: 16,
+                                  backgroundImage: AssetImage('assets/logo.png'),
+                                ),
+                                errorWidget: (context, url, error) => const CircleAvatar(
+                                  radius: 16,
+                                  backgroundImage: AssetImage('assets/logo.png'),
+                                ),
+                              ),
+                            ),
+                          Flexible(
+                            child: AnimatedContainer(
+                              duration: const Duration(milliseconds: 180),
+                              curve: Curves.easeInOut,
+                              margin: EdgeInsets.only(
+                                top: 2,
+                                bottom: 2,
+                                left: isMe ? 40 : 0,
+                                right: isMe ? 0 : 40,
+                              ),
+                              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                              decoration: BoxDecoration(
+                                color: isMe ? Colors.deepPurple : Colors.white,
+                                borderRadius: BorderRadius.only(
+                                  topLeft: const Radius.circular(18),
+                                  topRight: const Radius.circular(18),
+                                  bottomLeft: Radius.circular(isMe ? 18 : 4),
+                                  bottomRight: Radius.circular(isMe ? 4 : 18),
+                                ),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: Colors.black.withOpacity(0.06),
+                                    blurRadius: 6,
+                                    offset: const Offset(0, 2),
+                                  ),
+                                ],
+                              ),
+                              child: Column(
+                                crossAxisAlignment: isMe ? CrossAxisAlignment.end : CrossAxisAlignment.start,
+                                children: [
+                                  if (msg.imageUrl != null && msg.imageUrl!.isNotEmpty)
+                                    ClipRRect(
+                                      borderRadius: BorderRadius.circular(12),
+                                      child: CachedNetworkImage(
                                         imageUrl: msg.imageUrl!,
                                         width: 180,
                                         height: 180,
@@ -154,96 +222,179 @@ class _ChatScreenState extends State<ChatScreen> {
                                           child: const Icon(Icons.broken_image, color: Colors.red),
                                         ),
                                       ),
-                                      if (msg.text.isNotEmpty) ...[
-                                        const SizedBox(height: 8),
-                                        Text(msg.text),
-                                      ]
+                                    ),
+                                  if (msg.text.isNotEmpty)
+                                    Padding(
+                                      padding: const EdgeInsets.only(top: 4),
+                                      child: Text(
+                                        msg.text,
+                                        style: TextStyle(
+                                          color: isMe ? Colors.white : Colors.deepPurple,
+                                          fontSize: 16,
+                                          fontWeight: FontWeight.w500,
+                                        ),
+                                      ),
+                                    ),
+                                  Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      Text(
+                                        _formatTimestamp(msg.timestamp.toDate()),
+                                        style: TextStyle(
+                                          fontSize: 11,
+                                          color: isMe ? Colors.white70 : Colors.deepPurple.withAlpha(180),
+                                        ),
+                                      ),
+                                      if (isMe)
+                                        const Padding(
+                                          padding: EdgeInsets.only(left: 4),
+                                          child: Icon(Icons.check, size: 14, color: Colors.white70),
+                                        ),
                                     ],
-                                  )
-                                : Text(msg.text),
+                                  ),
+                                ],
+                              ),
+                            ),
                           ),
-                          const SizedBox(height: 2),
-                          Text(
-                            _formatTimestamp(msg.timestamp.toDate()),
-                            style: TextStyle(fontSize: 11, color: Colors.grey[600]),
-                          ),
+                          if (isMe)
+                            Padding(
+                              padding: const EdgeInsets.only(left: 8, bottom: 2),
+                              child: CachedNetworkImage(
+                                imageUrl: profileImagePath,
+                                imageBuilder: (context, imageProvider) => CircleAvatar(
+                                  radius: 16,
+                                  backgroundImage: imageProvider,
+                                ),
+                                placeholder: (context, url) => const CircleAvatar(
+                                  radius: 16,
+                                  backgroundImage: AssetImage('assets/logo.png'),
+                                ),
+                                errorWidget: (context, url, error) => const CircleAvatar(
+                                  radius: 16,
+                                  backgroundImage: AssetImage('assets/logo.png'),
+                                ),
+                              ),
+                            ),
                         ],
                       ),
                     );
-                  },
-                );
-              },
+                  }
+                  return ListView(
+                    controller: _scrollController,
+                    padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
+                    children: messageWidgets,
+                  );
+                },
+              ),
             ),
-          ),
-          const Divider(height: 1),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 8.0),
-            child: Row(
-              children: [
-                Expanded(
-                  child: TextField(
-                    controller: _controller,
-                    decoration: const InputDecoration(hintText: 'Type a message...'),
+            const Divider(height: 1),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(12, 8, 12, 16),
+              child: Material(
+                elevation: 2,
+                borderRadius: BorderRadius.circular(28),
+                color: Colors.white,
+                child: Container(
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(28),
                   ),
-                ),
-                IconButton(
-                  icon: const Icon(Icons.attach_file, color: Colors.deepPurple),
-                  onPressed: () async {
-                    final XFile? pickedFile = await _picker.pickImage(source: ImageSource.gallery);
-                    if (pickedFile != null) {
-                      setState(() {
-                        _isSending = true;
-                      });
-                      try {
-                        await chatService.sendImageMessage(widget.chatId, userId, File(pickedFile.path));
-                        _scrollToBottom();
-                      } finally {
-                        if (mounted) {
-                          setState(() {
-                            _isSending = false;
-                          });
-                        }
-                      }
-                    }
-                  },
-                ),
-                IconButton(
-                  icon: _isSending
-                      ? const SizedBox(
-                          width: 24,
-                          height: 24,
-                          child: CircularProgressIndicator(
-                            strokeWidth: 2.5,
-                            valueColor: AlwaysStoppedAnimation<Color>(Colors.deepPurple),
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    children: [
+                      Expanded(
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(vertical: 2),
+                          child: TextField(
+                            controller: _controller,
+                            decoration: const InputDecoration(
+                              hintText: 'Type a message...',
+                              border: InputBorder.none,
+                              isDense: true,
+                              contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                              filled: true,
+                              fillColor: Colors.transparent,
+                            ),
+                            minLines: 1,
+                            maxLines: 5,
+                            textInputAction: TextInputAction.newline,
+                            style: const TextStyle(fontSize: 16),
                           ),
-                        )
-                      : const Icon(Icons.send, color: Colors.deepPurple),
-                  onPressed: _isSending
-                      ? null
-                      : () async {
-                          final text = _controller.text.trim();
-                          if (text.isNotEmpty) {
-                            setState(() {
-                              _isSending = true;
-                            });
-                            _controller.clear(); // Clear immediately for instant UI feedback
-                            _scrollToBottom();
-                            try {
-                              await chatService.sendMessage(widget.chatId, userId, text);
-                            } finally {
-                              if (mounted) {
-                                setState(() {
-                                  _isSending = false;
-                                });
+                        ),
+                      ),
+                      Center(
+                        child: IconButton(
+                          icon: const Icon(Icons.attach_file, color: Colors.deepPurple, size: 26),
+                          onPressed: () async {
+                            final XFile? pickedFile = await _picker.pickImage(source: ImageSource.gallery);
+                            if (pickedFile != null) {
+                              setState(() {
+                                _isSending = true;
+                              });
+                              try {
+                                await chatService.sendImageMessage(widget.chatId, userId, File(pickedFile.path));
+                                _scrollToBottom();
+                              } finally {
+                                if (mounted) {
+                                  setState(() {
+                                    _isSending = false;
+                                  });
+                                }
                               }
                             }
-                          }
-                        },
+                          },
+                        ),
+                      ),
+                      Center(
+                        child: AnimatedSwitcher(
+                          duration: const Duration(milliseconds: 200),
+                          transitionBuilder: (child, anim) => ScaleTransition(scale: anim, child: child),
+                          child: _isSending
+                              ? const SizedBox(
+                                  width: 28,
+                                  height: 28,
+                                  child: Center(
+                                    child: CircularProgressIndicator(
+                                      strokeWidth: 2.5,
+                                      valueColor: AlwaysStoppedAnimation<Color>(Colors.deepPurple),
+                                    ),
+                                  ),
+                                )
+                              : IconButton(
+                                  key: const ValueKey('send'),
+                                  icon: const Icon(Icons.send, color: Colors.deepPurple, size: 26),
+                                  onPressed: _isSending
+                                      ? null
+                                      : () async {
+                                          final text = _controller.text.trim();
+                                          if (text.isNotEmpty) {
+                                            setState(() {
+                                              _isSending = true;
+                                            });
+                                            _controller.clear();
+                                            _scrollToBottom();
+                                            try {
+                                              await chatService.sendMessage(widget.chatId, userId, text);
+                                            } finally {
+                                              if (mounted) {
+                                                setState(() {
+                                                  _isSending = false;
+                                                });
+                                              }
+                                            }
+                                          }
+                                        },
+                                ),
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
-              ],
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
@@ -256,6 +407,23 @@ class _ChatScreenState extends State<ChatScreen> {
     } else {
       // Earlier
       return "${dateTime.day}/${dateTime.month}/${dateTime.year}";
+    }
+  }
+
+  bool _isSameDay(DateTime a, DateTime b) {
+    return a.year == b.year && a.month == b.month && a.day == b.day;
+  }
+
+  String _formatDateSeparator(DateTime date) {
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    final yesterday = today.subtract(const Duration(days: 1));
+    if (_isSameDay(date, today)) {
+      return 'Today';
+    } else if (_isSameDay(date, yesterday)) {
+      return 'Yesterday';
+    } else {
+      return "${date.day}/${date.month}/${date.year}";
     }
   }
 } 
