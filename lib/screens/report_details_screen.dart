@@ -154,6 +154,47 @@ class _ReportDetailsScreenState extends State<ReportDetailsScreen> {
                           ),
                         ],
                       ),
+                      if (!isAuthor) ...[
+                        const SizedBox(height: 16),
+                        Center(
+                          child: ElevatedButton.icon(
+                            onPressed: () async {
+                              final chatService = ChatService();
+                              final authService = context.read<AuthService>();
+                              final userId = authService.userId;
+                              final otherUserId = report.userId;
+                              if (userId == null || otherUserId == null) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(content: Text('User information not available.')),
+                                );
+                                return;
+                              }
+                              final chatId = await chatService.createOrGetChat(userId, otherUserId, report.id);
+                              if (context.mounted) {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (context) => ChatScreen(chatId: chatId, otherUserId: otherUserId),
+                                  ),
+                                );
+                              }
+                            },
+                            icon: const Icon(Icons.chat),
+                            label: const Text('Start Chat'),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: Colors.deepPurple,
+                              foregroundColor: Colors.white,
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 24,
+                                vertical: 12,
+                              ),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
                       const SizedBox(height: 24),
                       // Description
                       if (report.description.isNotEmpty) ...[
@@ -299,11 +340,14 @@ class _ReportDetailsScreenState extends State<ReportDetailsScreen> {
                                   color: Colors.deepPurple.withAlpha(170),
                                 ),
                                 const SizedBox(width: 12),
-                                Text(
-                                  report.email ?? 'No email available',
-                                  style: TextStyle(
-                                    color: Colors.deepPurple.withAlpha(170),
-                                    fontSize: 16,
+                                Expanded(
+                                  child: Text(
+                                    report.email ?? 'No email available',
+                                    style: TextStyle(
+                                      color: Colors.deepPurple.withAlpha(170),
+                                      fontSize: 16,
+                                    ),
+                                    overflow: TextOverflow.ellipsis,
                                   ),
                                 ),
                               ],
@@ -317,11 +361,14 @@ class _ReportDetailsScreenState extends State<ReportDetailsScreen> {
                                     color: Colors.deepPurple.withAlpha(170),
                                   ),
                                   const SizedBox(width: 12),
-                                  Text(
-                                    report.phoneNumber ?? 'No phone available',
-                                    style: TextStyle(
-                                      color: Colors.deepPurple.withAlpha(170),
-                                      fontSize: 16,
+                                  Expanded(
+                                    child: Text(
+                                      report.phoneNumber ?? 'No phone available',
+                                      style: TextStyle(
+                                        color: Colors.deepPurple.withAlpha(170),
+                                        fontSize: 16,
+                                      ),
+                                      overflow: TextOverflow.ellipsis,
                                     ),
                                   ),
                                 ],
@@ -330,72 +377,6 @@ class _ReportDetailsScreenState extends State<ReportDetailsScreen> {
                           ],
                         ),
                       ),
-                      const SizedBox(height: 24),
-                      // Timestamp
-                      Container(
-                        padding: const EdgeInsets.all(16),
-                        decoration: BoxDecoration(
-                          color: Colors.white.withAlpha(170),
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        child: Row(
-                          children: [
-                            Icon(
-                              Icons.access_time,
-                              color: Colors.deepPurple.withAlpha(76),
-                            ),
-                            const SizedBox(width: 12),
-                            Text(
-                              'Reported on ${report.timestamp.toString().split('.')[0]}',
-                              style: TextStyle(
-                                color: Colors.deepPurple.withAlpha(76),
-                                fontSize: 16,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                      if (!isAuthor) ...[
-                        const SizedBox(height: 24),
-                        Center(
-                          child: ElevatedButton.icon(
-                            onPressed: () async {
-                              final chatService = ChatService();
-                              final authService = context.read<AuthService>();
-                              final userId = authService.userId;
-                              final reporterId = report.userId;
-                              if (userId == null || reporterId == null) {
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  SnackBar(content: Text('User information not available.')),
-                                );
-                                return;
-                              }
-                              final chatId = await chatService.createOrGetChat(userId, reporterId, report.id);
-                              if (context.mounted) {
-                                Navigator.push(
-                                  context,
-                                  MaterialPageRoute(
-                                    builder: (context) => ChatScreen(chatId: chatId, otherUserId: reporterId),
-                                  ),
-                                );
-                              }
-                            },
-                            icon: const Icon(Icons.chat),
-                            label: const Text('Contact Reporter'),
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: Colors.deepPurple,
-                              foregroundColor: Colors.white,
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 24,
-                                vertical: 12,
-                              ),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                            ),
-                          ),
-                        ),
-                      ],
                       if (isAuthor && !report.isHelped) ...[
                         const SizedBox(height: 24),
                         Center(
