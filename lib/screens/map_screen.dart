@@ -8,7 +8,6 @@ import 'dart:io';
 import '../services/report_service.dart';
 import '../models/report.dart';
 import 'report_details_screen.dart';
-import '../services/auth_service.dart';
 
 class MapScreen extends StatefulWidget {
   const MapScreen({Key? key}) : super(key: key);
@@ -61,6 +60,7 @@ class _MapScreenState extends State<MapScreen>
           desiredAccuracy: LocationAccuracy.high,
         );
 
+        if (!mounted) return;
         setState(() {
           _currentPosition = position;
           _isLoading = false;
@@ -79,6 +79,7 @@ class _MapScreenState extends State<MapScreen>
           );
         }
       } else {
+        if (!mounted) return;
         setState(() {
           _isLoading = false;
         });
@@ -91,6 +92,7 @@ class _MapScreenState extends State<MapScreen>
         }
       }
     } catch (e) {
+      if (!mounted) return;
       setState(() {
         _isLoading = false;
       });
@@ -106,6 +108,7 @@ class _MapScreenState extends State<MapScreen>
 
   void _addCurrentLocationMarker() {
     if (_currentPosition != null) {
+      if (!mounted) return;
       setState(() {
         _markers.add(
           Marker(
@@ -133,6 +136,7 @@ class _MapScreenState extends State<MapScreen>
     final reports = reportService.reports;
 
     for (final report in reports) {
+      if (!mounted) return;
       setState(() {
         _markers.add(
           Marker(

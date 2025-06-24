@@ -120,6 +120,7 @@ class AuthService extends ChangeNotifier {
       final userId = const Uuid().v4();
       final hashedPassword = _hashPassword(password);
       final username = email.split('@')[0];
+      final dicebearUrl = 'https://api.dicebear.com/7.x/thumbs/svg?seed=$userId';
 
       // Save to Firestore
       await _firestore.collection('users').doc(email).set({
@@ -130,7 +131,7 @@ class AuthService extends ChangeNotifier {
         'isEmailVerified': false,
         'verificationCode': _verificationCode,
         'verificationCodeExpiry': _verificationCodeExpiry!.toIso8601String(),
-        'profileImagePath': null,
+        'profileImagePath': dicebearUrl,
         'username': username,
       });
 
@@ -145,7 +146,7 @@ class AuthService extends ChangeNotifier {
       await prefs.setString('verificationCode', _verificationCode!);
       await prefs.setString(
           'verificationCodeExpiry', _verificationCodeExpiry!.toIso8601String());
-      await prefs.setString('profileImagePath', '');
+      await prefs.setString('profileImagePath', dicebearUrl);
       await prefs.setString('username', username);
 
       _userId = userId;
@@ -153,7 +154,7 @@ class AuthService extends ChangeNotifier {
       _phoneNumber = digits;
       _showPhoneNumber = false;
       _isEmailVerified = false;
-      _profileImagePath = null;
+      _profileImagePath = dicebearUrl;
       _username = username;
       notifyListeners();
 
@@ -277,7 +278,11 @@ class AuthService extends ChangeNotifier {
   Future<void> setProfileImagePath(String path) async {
     debugPrint('setProfileImagePath called with path=$path, email=$_email');
     String? url = path;
-    if (path.isNotEmpty && !path.startsWith('http')) {
+    if (path.isEmpty) {
+      // Use DiceBear thumbs PNG as fallback
+      final fallback = 'https://api.dicebear.com/7.x/thumbs/png?seed=${_userId ?? 'unknown'}';
+      url = fallback;
+    } else if (!path.startsWith('http')) {
       url = await _uploadProfileImageZipline(path);
     }
     _profileImagePath = url;

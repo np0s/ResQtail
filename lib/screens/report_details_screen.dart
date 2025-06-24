@@ -6,6 +6,8 @@ import '../models/report.dart';
 import 'package:provider/provider.dart';
 import '../services/auth_service.dart';
 import '../services/report_service.dart';
+import '../services/chat_service.dart';
+import '../screens/chat_screen.dart';
 
 class ReportDetailsScreen extends StatefulWidget {
   final Report report;
@@ -353,6 +355,47 @@ class _ReportDetailsScreenState extends State<ReportDetailsScreen> {
                           ],
                         ),
                       ),
+                      if (!isAuthor) ...[
+                        const SizedBox(height: 24),
+                        Center(
+                          child: ElevatedButton.icon(
+                            onPressed: () async {
+                              final chatService = ChatService();
+                              final authService = context.read<AuthService>();
+                              final userId = authService.userId;
+                              final reporterId = report.userId;
+                              if (userId == null || reporterId == null) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(content: Text('User information not available.')),
+                                );
+                                return;
+                              }
+                              final chatId = await chatService.createOrGetChat(userId, reporterId, report.id);
+                              if (context.mounted) {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (context) => ChatScreen(chatId: chatId, otherUserId: reporterId),
+                                  ),
+                                );
+                              }
+                            },
+                            icon: const Icon(Icons.chat),
+                            label: const Text('Contact Reporter'),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: Colors.deepPurple,
+                              foregroundColor: Colors.white,
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 24,
+                                vertical: 12,
+                              ),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
                       if (isAuthor && !report.isHelped) ...[
                         const SizedBox(height: 24),
                         Center(
