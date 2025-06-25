@@ -130,7 +130,7 @@ class _RegisterScreenState extends State<RegisterScreen>
                           ),
                           const SizedBox(height: 8),
                           Text(
-                            'Sign up to get started (Dummy)',
+                            'Sign up to get started',
                             style: TextStyle(
                               fontSize: 16,
                               color: Theme.of(context)

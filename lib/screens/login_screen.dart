@@ -136,7 +136,7 @@ class _LoginScreenState extends State<LoginScreen>
                           ),
                           const SizedBox(height: 8),
                           Text(
-                            'Sign in to continue (dummy)',
+                            'Sign in to continue',
                             style: TextStyle(
                               fontSize: 16,
                               color: Theme.of(context)

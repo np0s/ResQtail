@@ -6,7 +6,7 @@ import '../services/auth_service.dart';
 import 'chat_screen.dart';
 
 class ChatListScreen extends StatefulWidget {
-  ChatListScreen({Key? key}) : super(key: key);
+  const ChatListScreen({Key? key}) : super(key: key);
 
   @override
   State<ChatListScreen> createState() => _ChatListScreenState();
@@ -41,15 +41,15 @@ class _ChatListScreenState extends State<ChatListScreen> {
     final authService = context.watch<AuthService>();
     final userId = authService.userId;
     if (userId == null) {
-      return Center(child: Text('Not logged in'));
+      return const Center(child: Text('Not logged in'));
     }
     return Scaffold(
-      appBar: AppBar(title: Text('Chats')),
+      appBar: AppBar(title: const Text('Chats')),
       body: StreamBuilder<List<Chat>>(
         stream: chatService.getUserChats(userId),
         builder: (context, snapshot) {
           if (!snapshot.hasData) {
-            return Center(child: CircularProgressIndicator());
+            return const Center(child: CircularProgressIndicator());
           }
           final chats = snapshot.data!;
           if (chats.isEmpty) {
@@ -58,8 +58,8 @@ class _ChatListScreenState extends State<ChatListScreen> {
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   Icon(Icons.chat_bubble_outline, size: 64, color: Colors.deepPurple.withAlpha(120)),
-                  SizedBox(height: 16),
-                  Text('No chats yet.', style: TextStyle(fontSize: 18, color: Colors.deepPurple)),
+                  const SizedBox(height: 16),
+                  const Text('No chats yet.', style: TextStyle(fontSize: 18, color: Colors.deepPurple)),
                 ],
               ),
             );
@@ -71,7 +71,7 @@ class _ChatListScreenState extends State<ChatListScreen> {
           }
           return ListView.separated(
             itemCount: chats.length,
-            separatorBuilder: (context, index) => Divider(height: 1, indent: 72, endIndent: 12),
+            separatorBuilder: (context, index) => const Divider(height: 1, indent: 72, endIndent: 12),
             padding: const EdgeInsets.symmetric(vertical: 0, horizontal: 0),
             itemBuilder: (context, index) {
               final chat = chats[index];
@@ -130,7 +130,7 @@ class _ChatListScreenState extends State<ChatListScreen> {
                       if (mounted) {
                         setState(() {});
                         ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(content: Text('Chat deleted')),
+                          const SnackBar(content: Text('Chat deleted')),
                         );
                       }
                     } else if (value == 'mute') {
@@ -138,7 +138,7 @@ class _ChatListScreenState extends State<ChatListScreen> {
                       if (mounted) {
                         setState(() {});
                         ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(content: Text('Chat muted')),
+                          const SnackBar(content: Text('Chat muted')),
                         );
                       }
                     } else if (value == 'unmute') {
@@ -146,25 +146,25 @@ class _ChatListScreenState extends State<ChatListScreen> {
                       if (mounted) {
                         setState(() {});
                         ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(content: Text('Chat unmuted')),
+                          const SnackBar(content: Text('Chat unmuted')),
                         );
                       }
                     } else if (value == 'unread') {
                       // TODO: Implement mark as unread
                       if (mounted) {
                         ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(content: Text('Marked as unread (not implemented)')),
+                          const SnackBar(content: Text('Marked as unread (not implemented)')),
                         );
                       }
                     }
                   },
                   itemBuilder: (context) => [
-                    PopupMenuItem(value: 'unread', child: Text('Mark as Unread')),
+                    const PopupMenuItem(value: 'unread', child: Text('Mark as Unread')),
                     if (!isMuted)
-                      PopupMenuItem(value: 'mute', child: Text('Mute Notifications')),
+                      const PopupMenuItem(value: 'mute', child: Text('Mute Notifications')),
                     if (isMuted)
-                      PopupMenuItem(value: 'unmute', child: Text('Unmute')),
-                    PopupMenuItem(value: 'delete', child: Text('Delete Chat', style: TextStyle(color: Colors.red))),
+                      const PopupMenuItem(value: 'unmute', child: Text('Unmute')),
+                    const PopupMenuItem(value: 'delete', child: Text('Delete Chat', style: TextStyle(color: Colors.red))),
                   ],
                   icon: Icon(Icons.more_vert, color: Colors.grey[700]),
                 ),

@@ -178,9 +178,9 @@ class _ReportDetailsScreenState extends State<ReportDetailsScreen> {
                               final authService = context.read<AuthService>();
                               final userId = authService.userId;
                               final otherUserId = report.userId;
-                              if (userId == null || otherUserId == null) {
+                              if (userId == null) {
                                 ScaffoldMessenger.of(context).showSnackBar(
-                                  SnackBar(
+                                  const SnackBar(
                                       content: Text(
                                           'User information not available.')),
                                 );
