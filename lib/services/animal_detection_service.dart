@@ -11,7 +11,7 @@ enum DetectionAPI {
 
 class AnimalDetectionService {
   static const double _confidenceThreshold = 0.5;
-  static const DetectionAPI _currentAPI = DetectionAPI.imagga; // Change this to switch APIs
+  static const DetectionAPI _currentAPI = kDebugMode ? DetectionAPI.huggingFace : DetectionAPI.imagga;
   
   // Animal categories we're interested in
   final Set<String> _animalCategories = {
