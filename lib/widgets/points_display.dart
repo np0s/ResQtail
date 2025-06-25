@@ -105,7 +105,7 @@ class PointsDisplay extends StatelessWidget {
                       ),
                       decoration: BoxDecoration(
                         gradient: const LinearGradient(
-                          colors: [Color(0xFF6750A4), Color(0xFF03DAC6)],
+                          colors: [Color(0xFF7C4DFF), Color(0xFF9575CD)],
                         ),
                         borderRadius: BorderRadius.circular(20),
                       ),
@@ -494,7 +494,7 @@ class PointsDisplay extends StatelessWidget {
                                     onPressed: () =>
                                         Navigator.of(context).pop(),
                                     style: ElevatedButton.styleFrom(
-                                      backgroundColor: Colors.grey[400],
+                                      backgroundColor: Colors.deepPurple,
                                       foregroundColor: Colors.white,
                                       shape: RoundedRectangleBorder(
                                         borderRadius: BorderRadius.circular(12),

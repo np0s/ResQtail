@@ -489,6 +489,7 @@ class _MapScreenState extends State<MapScreen>
               right: 16,
               child: Card(
                 elevation: 4,
+                color: const Color(0xFFF3E5F5),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(12),
                 ),
@@ -497,7 +498,7 @@ class _MapScreenState extends State<MapScreen>
                   child: Row(
                     children: [
                       Icon(
-                        _isSearchMode ? Icons.close : Icons.search,
+                        Icons.search,
                         color: Colors.blue,
                       ),
                       const SizedBox(width: 8),
@@ -509,6 +510,8 @@ class _MapScreenState extends State<MapScreen>
                                   hintText: 'Type to search tags...',
                                   border: InputBorder.none,
                                   contentPadding: EdgeInsets.zero,
+                                  filled: true,
+                                  fillColor: Colors.transparent,
                                 ),
                                 onChanged: _searchByText,
                                 style: const TextStyle(fontSize: 14),
@@ -526,25 +529,6 @@ class _MapScreenState extends State<MapScreen>
                                 ),
                               ),
                       ),
-                      if (_isSearchMode && _selectedSearchTag != null)
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 8,
-                            vertical: 4,
-                          ),
-                          decoration: BoxDecoration(
-                            color: Colors.blue.withOpacity(0.1),
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          child: Text(
-                            _selectedSearchTag!,
-                            style: const TextStyle(
-                              fontSize: 12,
-                              color: Colors.blue,
-                              fontWeight: FontWeight.w500,
-                            ),
-                          ),
-                        ),
                       if (_isSearchMode)
                         IconButton(
                           icon: const Icon(Icons.close, size: 20),
