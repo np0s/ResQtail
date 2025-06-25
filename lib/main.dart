@@ -11,7 +11,6 @@ import 'screens/verification_screen.dart';
 import 'screens/home_screen.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'firebase_options.dart';
-import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
 void main() async {
@@ -19,22 +18,10 @@ void main() async {
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
   );
-  
+
   await dotenv.load(fileName: ".env");
-  
+
   await ConfigService.init();
-
-  // Initialize Firebase Messaging
-  final fcm = FirebaseMessaging.instance;
-  // Request notification permissions
-  await fcm.requestPermission();
-  // Get and print the FCM token
-  final fcmToken = await fcm.getToken();
-  print('FCM Token: $fcmToken');
-
-  // Save FCM token to Firestore if user is logged in
-  // (This requires waiting for AuthService to be available)
-  // We'll do this in the MyApp widget below
 
   runApp(
     MultiProvider(
@@ -55,36 +42,16 @@ void main() async {
           create: (_) => ReportService(),
         ),
       ],
-      child: MyApp(fcmToken: fcmToken),
+      child: const MyApp(),
     ),
   );
 }
 
 class MyApp extends StatelessWidget {
-  final String? fcmToken;
-  const MyApp({super.key, this.fcmToken});
+  const MyApp({super.key});
 
   @override
   Widget build(BuildContext context) {
-    // Save FCM token to Firestore if user is logged in
-    final authService = Provider.of<AuthService>(context, listen: false);
-    if (fcmToken != null && authService.userId != null) {
-      FirebaseFirestore.instance.collection('users').doc(authService.email).update({
-        'fcmToken': fcmToken,
-      });
-    }
-
-    // Scaffold notification handlers
-    FirebaseMessaging.onMessage.listen((RemoteMessage message) {
-      print('Received a foreground message: ${message.notification?.title}');
-      // TODO: Show a local notification or update UI
-    });
-    FirebaseMessaging.onMessageOpenedApp.listen((RemoteMessage message) {
-      print('Notification opened: ${message.notification?.title}');
-      // TODO: Navigate to the relevant screen
-    });
-    // Optionally handle getInitialMessage for terminated state
-
     return MaterialApp(
       title: 'ResqTail',
       theme: ThemeData(

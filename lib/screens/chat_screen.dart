@@ -10,7 +10,8 @@ import 'dart:io';
 class ChatScreen extends StatefulWidget {
   final String chatId;
   final String otherUserId;
-  const ChatScreen({Key? key, required this.chatId, required this.otherUserId}) : super(key: key);
+  const ChatScreen({Key? key, required this.chatId, required this.otherUserId})
+      : super(key: key);
 
   @override
   State<ChatScreen> createState() => _ChatScreenState();
@@ -38,7 +39,9 @@ class _ChatScreenState extends State<ChatScreen> {
       setState(() {
         otherUserData = data;
         cachedUsername = data['username'] ?? 'User';
-        cachedProfileImagePath = (data['profileImagePath'] as String?)?.replaceAll('/svg?', '/png?') ?? 'https://api.dicebear.com/7.x/thumbs/png?seed=unknown';
+        cachedProfileImagePath = (data['profileImagePath'] as String?)
+                ?.replaceAll('/svg?', '/png?') ??
+            'https://api.dicebear.com/7.x/thumbs/png?seed=unknown';
       });
     }
   }
@@ -59,14 +62,17 @@ class _ChatScreenState extends State<ChatScreen> {
       return const Center(child: Text('Not logged in'));
     }
     final username = cachedUsername ?? 'User';
-    final profileImagePath = cachedProfileImagePath ?? 'https://api.dicebear.com/7.x/thumbs/png?seed=placeholder';
+    final myProfileImagePath = authService.profileImagePath ??
+        'https://api.dicebear.com/7.x/thumbs/png?seed=me';
+    final otherProfileImagePath = cachedProfileImagePath ??
+        'https://api.dicebear.com/7.x/thumbs/png?seed=placeholder';
     return Scaffold(
       appBar: AppBar(
         elevation: 2,
         title: Row(
           children: [
             CachedNetworkImage(
-              imageUrl: profileImagePath,
+              imageUrl: otherProfileImagePath,
               imageBuilder: (context, imageProvider) => CircleAvatar(
                 radius: 20,
                 backgroundImage: imageProvider,
@@ -110,14 +116,19 @@ class _ChatScreenState extends State<ChatScreen> {
                       child: Column(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          Icon(Icons.chat_bubble_outline, size: 64, color: Colors.deepPurple.withAlpha(120)),
+                          Icon(Icons.chat_bubble_outline,
+                              size: 64,
+                              color: Colors.deepPurple.withAlpha(120)),
                           const SizedBox(height: 16),
-                          const Text('No messages yet.', style: TextStyle(fontSize: 18, color: Colors.deepPurple)),
+                          const Text('No messages yet.',
+                              style: TextStyle(
+                                  fontSize: 18, color: Colors.deepPurple)),
                         ],
                       ),
                     );
                   }
-                  WidgetsBinding.instance.addPostFrameCallback((_) => _scrollToBottom());
+                  WidgetsBinding.instance
+                      .addPostFrameCallback((_) => _scrollToBottom());
                   // Group messages by calendar day
                   List<Widget> messageWidgets = [];
                   DateTime? lastDate;
@@ -125,21 +136,26 @@ class _ChatScreenState extends State<ChatScreen> {
                     final msg = messages[i];
                     final isMe = msg.senderId == userId;
                     final msgDate = msg.timestamp.toDate();
-                    final msgDay = DateTime(msgDate.year, msgDate.month, msgDate.day);
+                    final msgDay =
+                        DateTime(msgDate.year, msgDate.month, msgDate.day);
                     if (lastDate == null || !_isSameDay(msgDay, lastDate)) {
                       messageWidgets.add(
                         Padding(
                           padding: const EdgeInsets.symmetric(vertical: 12),
                           child: Center(
                             child: Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 16, vertical: 4),
                               decoration: BoxDecoration(
                                 color: Colors.deepPurple.withAlpha(30),
                                 borderRadius: BorderRadius.circular(16),
                               ),
                               child: Text(
                                 _formatDateSeparator(msgDay),
-                                style: const TextStyle(fontSize: 13, color: Colors.deepPurple, fontWeight: FontWeight.w500),
+                                style: const TextStyle(
+                                    fontSize: 13,
+                                    color: Colors.deepPurple,
+                                    fontWeight: FontWeight.w500),
                               ),
                             ),
                           ),
@@ -149,25 +165,33 @@ class _ChatScreenState extends State<ChatScreen> {
                     }
                     messageWidgets.add(
                       Row(
-                        mainAxisAlignment: isMe ? MainAxisAlignment.end : MainAxisAlignment.start,
+                        mainAxisAlignment: isMe
+                            ? MainAxisAlignment.end
+                            : MainAxisAlignment.start,
                         crossAxisAlignment: CrossAxisAlignment.end,
                         children: [
                           if (!isMe)
                             Padding(
-                              padding: const EdgeInsets.only(right: 8, bottom: 2),
+                              padding:
+                                  const EdgeInsets.only(right: 8, bottom: 2),
                               child: CachedNetworkImage(
-                                imageUrl: profileImagePath,
-                                imageBuilder: (context, imageProvider) => CircleAvatar(
+                                imageUrl: otherProfileImagePath,
+                                imageBuilder: (context, imageProvider) =>
+                                    CircleAvatar(
                                   radius: 16,
                                   backgroundImage: imageProvider,
                                 ),
-                                placeholder: (context, url) => const CircleAvatar(
+                                placeholder: (context, url) =>
+                                    const CircleAvatar(
                                   radius: 16,
-                                  backgroundImage: AssetImage('assets/logo.png'),
+                                  backgroundImage:
+                                      AssetImage('assets/logo.png'),
                                 ),
-                                errorWidget: (context, url, error) => const CircleAvatar(
+                                errorWidget: (context, url, error) =>
+                                    const CircleAvatar(
                                   radius: 16,
-                                  backgroundImage: AssetImage('assets/logo.png'),
+                                  backgroundImage:
+                                      AssetImage('assets/logo.png'),
                                 ),
                               ),
                             ),
@@ -181,7 +205,8 @@ class _ChatScreenState extends State<ChatScreen> {
                                 left: isMe ? 40 : 0,
                                 right: isMe ? 0 : 40,
                               ),
-                              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 14, vertical: 10),
                               decoration: BoxDecoration(
                                 color: isMe ? Colors.deepPurple : Colors.white,
                                 borderRadius: BorderRadius.only(
@@ -199,9 +224,12 @@ class _ChatScreenState extends State<ChatScreen> {
                                 ],
                               ),
                               child: Column(
-                                crossAxisAlignment: isMe ? CrossAxisAlignment.end : CrossAxisAlignment.start,
+                                crossAxisAlignment: isMe
+                                    ? CrossAxisAlignment.end
+                                    : CrossAxisAlignment.start,
                                 children: [
-                                  if (msg.imageUrl != null && msg.imageUrl!.isNotEmpty)
+                                  if (msg.imageUrl != null &&
+                                      msg.imageUrl!.isNotEmpty)
                                     ClipRRect(
                                       borderRadius: BorderRadius.circular(12),
                                       child: CachedNetworkImage(
@@ -209,17 +237,22 @@ class _ChatScreenState extends State<ChatScreen> {
                                         width: 180,
                                         height: 180,
                                         fit: BoxFit.cover,
-                                        placeholder: (context, url) => Container(
+                                        placeholder: (context, url) =>
+                                            Container(
                                           width: 180,
                                           height: 180,
                                           color: Colors.grey[300],
-                                          child: const Center(child: CircularProgressIndicator()),
+                                          child: const Center(
+                                              child:
+                                                  CircularProgressIndicator()),
                                         ),
-                                        errorWidget: (context, url, error) => Container(
+                                        errorWidget: (context, url, error) =>
+                                            Container(
                                           width: 180,
                                           height: 180,
                                           color: Colors.grey[300],
-                                          child: const Icon(Icons.broken_image, color: Colors.red),
+                                          child: const Icon(Icons.broken_image,
+                                              color: Colors.red),
                                         ),
                                       ),
                                     ),
@@ -229,7 +262,9 @@ class _ChatScreenState extends State<ChatScreen> {
                                       child: Text(
                                         msg.text,
                                         style: TextStyle(
-                                          color: isMe ? Colors.white : Colors.deepPurple,
+                                          color: isMe
+                                              ? Colors.white
+                                              : Colors.deepPurple,
                                           fontSize: 16,
                                           fontWeight: FontWeight.w500,
                                         ),
@@ -239,16 +274,21 @@ class _ChatScreenState extends State<ChatScreen> {
                                     mainAxisSize: MainAxisSize.min,
                                     children: [
                                       Text(
-                                        _formatTimestamp(msg.timestamp.toDate()),
+                                        _formatTimestamp(
+                                            msg.timestamp.toDate()),
                                         style: TextStyle(
                                           fontSize: 11,
-                                          color: isMe ? Colors.white70 : Colors.deepPurple.withAlpha(180),
+                                          color: isMe
+                                              ? Colors.white70
+                                              : Colors.deepPurple
+                                                  .withAlpha(180),
                                         ),
                                       ),
                                       if (isMe)
                                         const Padding(
                                           padding: EdgeInsets.only(left: 4),
-                                          child: Icon(Icons.check, size: 14, color: Colors.white70),
+                                          child: Icon(Icons.check,
+                                              size: 14, color: Colors.white70),
                                         ),
                                     ],
                                   ),
@@ -258,20 +298,26 @@ class _ChatScreenState extends State<ChatScreen> {
                           ),
                           if (isMe)
                             Padding(
-                              padding: const EdgeInsets.only(left: 8, bottom: 2),
+                              padding:
+                                  const EdgeInsets.only(left: 8, bottom: 2),
                               child: CachedNetworkImage(
-                                imageUrl: profileImagePath,
-                                imageBuilder: (context, imageProvider) => CircleAvatar(
+                                imageUrl: myProfileImagePath,
+                                imageBuilder: (context, imageProvider) =>
+                                    CircleAvatar(
                                   radius: 16,
                                   backgroundImage: imageProvider,
                                 ),
-                                placeholder: (context, url) => const CircleAvatar(
+                                placeholder: (context, url) =>
+                                    const CircleAvatar(
                                   radius: 16,
-                                  backgroundImage: AssetImage('assets/logo.png'),
+                                  backgroundImage:
+                                      AssetImage('assets/logo.png'),
                                 ),
-                                errorWidget: (context, url, error) => const CircleAvatar(
+                                errorWidget: (context, url, error) =>
+                                    const CircleAvatar(
                                   radius: 16,
-                                  backgroundImage: AssetImage('assets/logo.png'),
+                                  backgroundImage:
+                                      AssetImage('assets/logo.png'),
                                 ),
                               ),
                             ),
@@ -281,7 +327,8 @@ class _ChatScreenState extends State<ChatScreen> {
                   }
                   return ListView(
                     controller: _scrollController,
-                    padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
+                    padding:
+                        const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
                     children: messageWidgets,
                   );
                 },
@@ -299,7 +346,8 @@ class _ChatScreenState extends State<ChatScreen> {
                     color: Colors.white,
                     borderRadius: BorderRadius.circular(28),
                   ),
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                   child: Row(
                     crossAxisAlignment: CrossAxisAlignment.center,
                     children: [
@@ -312,7 +360,8 @@ class _ChatScreenState extends State<ChatScreen> {
                               hintText: 'Type a message...',
                               border: InputBorder.none,
                               isDense: true,
-                              contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                              contentPadding: EdgeInsets.symmetric(
+                                  horizontal: 16, vertical: 10),
                               filled: true,
                               fillColor: Colors.transparent,
                             ),
@@ -325,15 +374,20 @@ class _ChatScreenState extends State<ChatScreen> {
                       ),
                       Center(
                         child: IconButton(
-                          icon: const Icon(Icons.attach_file, color: Colors.deepPurple, size: 26),
+                          icon: const Icon(Icons.attach_file,
+                              color: Colors.deepPurple, size: 26),
                           onPressed: () async {
-                            final XFile? pickedFile = await _picker.pickImage(source: ImageSource.gallery);
+                            final XFile? pickedFile = await _picker.pickImage(
+                                source: ImageSource.gallery);
                             if (pickedFile != null) {
                               setState(() {
                                 _isSending = true;
                               });
                               try {
-                                await chatService.sendImageMessage(widget.chatId, userId, File(pickedFile.path));
+                                await chatService.sendImageMessage(
+                                    widget.chatId,
+                                    userId,
+                                    File(pickedFile.path));
                                 _scrollToBottom();
                               } finally {
                                 if (mounted) {
@@ -349,7 +403,8 @@ class _ChatScreenState extends State<ChatScreen> {
                       Center(
                         child: AnimatedSwitcher(
                           duration: const Duration(milliseconds: 200),
-                          transitionBuilder: (child, anim) => ScaleTransition(scale: anim, child: child),
+                          transitionBuilder: (child, anim) =>
+                              ScaleTransition(scale: anim, child: child),
                           child: _isSending
                               ? const SizedBox(
                                   width: 28,
@@ -357,13 +412,15 @@ class _ChatScreenState extends State<ChatScreen> {
                                   child: Center(
                                     child: CircularProgressIndicator(
                                       strokeWidth: 2.5,
-                                      valueColor: AlwaysStoppedAnimation<Color>(Colors.deepPurple),
+                                      valueColor: AlwaysStoppedAnimation<Color>(
+                                          Colors.deepPurple),
                                     ),
                                   ),
                                 )
                               : IconButton(
                                   key: const ValueKey('send'),
-                                  icon: const Icon(Icons.send, color: Colors.deepPurple, size: 26),
+                                  icon: const Icon(Icons.send,
+                                      color: Colors.deepPurple, size: 26),
                                   onPressed: _isSending
                                       ? null
                                       : () async {
@@ -375,7 +432,8 @@ class _ChatScreenState extends State<ChatScreen> {
                                             _controller.clear();
                                             _scrollToBottom();
                                             try {
-                                              await chatService.sendMessage(widget.chatId, userId, text);
+                                              await chatService.sendMessage(
+                                                  widget.chatId, userId, text);
                                             } finally {
                                               if (mounted) {
                                                 setState(() {
@@ -426,4 +484,4 @@ class _ChatScreenState extends State<ChatScreen> {
       return "${date.day}/${date.month}/${date.year}";
     }
   }
-} 
+}
