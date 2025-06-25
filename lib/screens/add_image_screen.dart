@@ -10,8 +10,11 @@ import '../services/auth_service.dart';
 import '../services/report_service.dart';
 import '../services/animal_detection_service.dart';
 import '../models/report.dart';
+import '../models/user_points.dart';
 import 'dart:ui';
 import '../screens/map_picker_screen.dart';
+import '../services/points_service.dart';
+import '../widgets/points_celebration.dart';
 
 class AddImageScreen extends StatefulWidget {
   const AddImageScreen({Key? key}) : super(key: key);
@@ -317,17 +320,46 @@ class _AddImageScreenState extends State<AddImageScreen>
       );
       await reportService.addReport(report);
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Report submitted successfully')),
-        );
-        setState(() {
-          _primaryImage = null;
-          _secondaryImages.clear();
-          _selectedTags.clear();
-          _descriptionController.clear();
-          _detectedAnimalType = null;
-          _pickedLocation = _initialMapCenter;
-        });
+        final pointsService = context.read<PointsService>();
+        final username =
+            authService.username ?? authService.email?.split('@')[0] ?? 'User';
+        final currentBadges = pointsService.earnedBadges.length;
+        final pointsEarned = await pointsService.addPointsForReport(userId);
+        await pointsService.loadUserPoints(userId);
+        final newBadges = pointsService.earnedBadges.length - currentBadges;
+        AchievementBadge? newBadge;
+        if (newBadges > 0) {
+          newBadge = pointsService.earnedBadges.last;
+          showDialog(
+            context: context,
+            barrierDismissible: false,
+            builder: (context) => PointsCelebration(
+              username: username,
+              pointsEarned: pointsService.currentUserPoints?.totalPoints ?? 0,
+              badge: newBadge,
+              onDismiss: () {
+                Navigator.of(context).pop();
+                setState(() {
+                  _primaryImage = null;
+                  _secondaryImages.clear();
+                  _selectedTags.clear();
+                  _descriptionController.clear();
+                  _detectedAnimalType = null;
+                  _pickedLocation = _initialMapCenter;
+                });
+              },
+            ),
+          );
+        } else {
+          setState(() {
+            _primaryImage = null;
+            _secondaryImages.clear();
+            _selectedTags.clear();
+            _descriptionController.clear();
+            _detectedAnimalType = null;
+            _pickedLocation = _initialMapCenter;
+          });
+        }
       }
     } catch (e) {
       debugPrint('Error submitting report: $e');
@@ -408,9 +440,10 @@ class _AddImageScreenState extends State<AddImageScreen>
                 margin: const EdgeInsets.only(bottom: 18),
                 alignment: Alignment.center,
                 child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
                   decoration: BoxDecoration(
-                    color: Colors.deepPurple.withAlpha((0.85*255).toInt()),
+                    color: Colors.deepPurple.withAlpha((0.85 * 255).toInt()),
                     borderRadius: BorderRadius.circular(18),
                     boxShadow: [
                       BoxShadow(
@@ -443,7 +476,8 @@ class _AddImageScreenState extends State<AddImageScreen>
               const SizedBox(height: 8),
               Card(
                 elevation: 4,
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(16)),
                 child: GestureDetector(
                   onTap: () => _pickPrimaryImage(source: ImageSource.gallery),
                   child: Container(
@@ -457,9 +491,12 @@ class _AddImageScreenState extends State<AddImageScreen>
                             child: Column(
                               mainAxisAlignment: MainAxisAlignment.center,
                               children: [
-                                Icon(Icons.add_a_photo, size: 44, color: Colors.deepPurple[200]),
+                                Icon(Icons.add_a_photo,
+                                    size: 44, color: Colors.deepPurple[200]),
                                 const SizedBox(height: 8),
-                                Text('Tap to add main photo', style: TextStyle(color: Colors.deepPurple[200])),
+                                Text('Tap to add main photo',
+                                    style: TextStyle(
+                                        color: Colors.deepPurple[200])),
                               ],
                             ),
                           )
@@ -468,7 +505,8 @@ class _AddImageScreenState extends State<AddImageScreen>
                             children: [
                               ClipRRect(
                                 borderRadius: BorderRadius.circular(16),
-                                child: Image.file(_primaryImage!, fit: BoxFit.cover),
+                                child: Image.file(_primaryImage!,
+                                    fit: BoxFit.cover),
                               ),
                               Positioned(
                                 top: 8,
@@ -482,9 +520,14 @@ class _AddImageScreenState extends State<AddImageScreen>
                                     decoration: const BoxDecoration(
                                       color: Colors.white,
                                       shape: BoxShape.circle,
-                                      boxShadow: [BoxShadow(color: Color.fromARGB(20, 0, 0, 0), blurRadius: 4)],
+                                      boxShadow: [
+                                        BoxShadow(
+                                            color: Color.fromARGB(20, 0, 0, 0),
+                                            blurRadius: 4)
+                                      ],
                                     ),
-                                    child: const Icon(Icons.close, size: 18, color: Colors.red),
+                                    child: const Icon(Icons.close,
+                                        size: 18, color: Colors.red),
                                   ),
                                 ),
                               ),
@@ -500,29 +543,38 @@ class _AddImageScreenState extends State<AddImageScreen>
               // Animal Type
               Row(
                 children: [
-                  const Text('Animal Type:', style: TextStyle(fontWeight: FontWeight.w500, color: Colors.deepPurple)),
+                  const Text('Animal Type:',
+                      style: TextStyle(
+                          fontWeight: FontWeight.w500,
+                          color: Colors.deepPurple)),
                   const SizedBox(width: 10),
                   Expanded(
                     child: GestureDetector(
                       onTap: _showEditAnimalTypeDialog,
                       child: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 12, vertical: 10),
                         decoration: BoxDecoration(
                           color: Colors.grey[100],
                           borderRadius: BorderRadius.circular(8),
-                          border: Border.all(color: Colors.deepPurple.withAlpha((0.10*255).toInt())),
+                          border: Border.all(
+                              color: Colors.deepPurple
+                                  .withAlpha((0.10 * 255).toInt())),
                         ),
                         child: Row(
                           children: [
-                            const Icon(Icons.pets, color: Colors.deepPurple, size: 18),
+                            const Icon(Icons.pets,
+                                color: Colors.deepPurple, size: 18),
                             const SizedBox(width: 8),
                             Expanded(
                               child: Text(
                                 _detectedAnimalType ?? 'Tap to enter',
-                                style: const TextStyle(fontWeight: FontWeight.w500),
+                                style: const TextStyle(
+                                    fontWeight: FontWeight.w500),
                               ),
                             ),
-                            const Icon(Icons.edit, size: 16, color: Colors.deepPurple),
+                            const Icon(Icons.edit,
+                                size: 16, color: Colors.deepPurple),
                           ],
                         ),
                       ),
@@ -534,7 +586,10 @@ class _AddImageScreenState extends State<AddImageScreen>
               // Tags
               Row(
                 children: [
-                  const Text('Tags:', style: TextStyle(fontWeight: FontWeight.w500, color: Colors.deepPurple)),
+                  const Text('Tags:',
+                      style: TextStyle(
+                          fontWeight: FontWeight.w500,
+                          color: Colors.deepPurple)),
                   const SizedBox(width: 10),
                   Expanded(
                     child: Wrap(
@@ -556,11 +611,15 @@ class _AddImageScreenState extends State<AddImageScreen>
                               });
                             },
                             backgroundColor: Colors.grey[100],
-                            selectedColor: Colors.deepPurple.withAlpha((0.15*255).toInt()),
+                            selectedColor: Colors.deepPurple
+                                .withAlpha((0.15 * 255).toInt()),
                             checkmarkColor: Colors.deepPurple,
                             labelStyle: TextStyle(
-                              color: isSelected ? Colors.deepPurple : Colors.black,
-                              fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                              color:
+                                  isSelected ? Colors.deepPurple : Colors.black,
+                              fontWeight: isSelected
+                                  ? FontWeight.bold
+                                  : FontWeight.normal,
                             ),
                           );
                         }),
@@ -579,11 +638,15 @@ class _AddImageScreenState extends State<AddImageScreen>
                               });
                             },
                             backgroundColor: Colors.grey[100],
-                            selectedColor: Colors.deepPurple.withAlpha((0.15*255).toInt()),
+                            selectedColor: Colors.deepPurple
+                                .withAlpha((0.15 * 255).toInt()),
                             checkmarkColor: Colors.deepPurple,
                             labelStyle: TextStyle(
-                              color: isSelected ? Colors.deepPurple : Colors.black,
-                              fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                              color:
+                                  isSelected ? Colors.deepPurple : Colors.black,
+                              fontWeight: isSelected
+                                  ? FontWeight.bold
+                                  : FontWeight.normal,
                             ),
                           );
                         }),
@@ -610,11 +673,15 @@ class _AddImageScreenState extends State<AddImageScreen>
                   fillColor: Colors.grey[100],
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(8),
-                    borderSide: BorderSide(color: Colors.deepPurple.withAlpha((0.10*255).toInt())),
+                    borderSide: BorderSide(
+                        color:
+                            Colors.deepPurple.withAlpha((0.10 * 255).toInt())),
                   ),
                   enabledBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(8),
-                    borderSide: BorderSide(color: Colors.deepPurple.withAlpha((0.10*255).toInt())),
+                    borderSide: BorderSide(
+                        color:
+                            Colors.deepPurple.withAlpha((0.10 * 255).toInt())),
                   ),
                   contentPadding: const EdgeInsets.all(12),
                 ),
@@ -629,7 +696,8 @@ class _AddImageScreenState extends State<AddImageScreen>
                   final mapHeight = screenHeight * 0.22; // 22% of screen height
                   return Card(
                     elevation: 3,
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                    shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(14)),
                     child: Stack(
                       children: [
                         Container(
@@ -640,14 +708,18 @@ class _AddImageScreenState extends State<AddImageScreen>
                           child: _isLoadingLocation
                               ? const Center(child: CircularProgressIndicator())
                               : _initialMapCenter == null
-                                  ? const Center(child: Text('Could not get location'))
+                                  ? const Center(
+                                      child: Text('Could not get location'))
                                   : Stack(
                                       children: [
                                         ClipRRect(
-                                          borderRadius: BorderRadius.circular(14),
+                                          borderRadius:
+                                              BorderRadius.circular(14),
                                           child: GoogleMap(
-                                            initialCameraPosition: CameraPosition(
-                                              target: _pickedLocation ?? _initialMapCenter!,
+                                            initialCameraPosition:
+                                                CameraPosition(
+                                              target: _pickedLocation ??
+                                                  _initialMapCenter!,
                                               zoom: 15,
                                             ),
                                             onMapCreated: (controller) {
@@ -657,20 +729,29 @@ class _AddImageScreenState extends State<AddImageScreen>
                                               setState(() {
                                                 _pickedLocation = location;
                                               });
-                                              ScaffoldMessenger.of(context).showSnackBar(
-                                                const SnackBar(content: Text('Location pinned'), duration: Duration(seconds: 1)),
+                                              ScaffoldMessenger.of(context)
+                                                  .showSnackBar(
+                                                const SnackBar(
+                                                    content:
+                                                        Text('Location pinned'),
+                                                    duration:
+                                                        Duration(seconds: 1)),
                                               );
                                             },
                                             markers: _pickedLocation == null
                                                 ? {}
                                                 : {
                                                     Marker(
-                                                      markerId: const MarkerId('picked'),
-                                                      position: _pickedLocation!,
+                                                      markerId: const MarkerId(
+                                                          'picked'),
+                                                      position:
+                                                          _pickedLocation!,
                                                       draggable: true,
-                                                      onDragEnd: (LatLng newPosition) {
+                                                      onDragEnd:
+                                                          (LatLng newPosition) {
                                                         setState(() {
-                                                          _pickedLocation = newPosition;
+                                                          _pickedLocation =
+                                                              newPosition;
                                                         });
                                                       },
                                                     ),
@@ -694,7 +775,8 @@ class _AddImageScreenState extends State<AddImageScreen>
                                             mini: true,
                                             onPressed: _getCurrentLocation,
                                             backgroundColor: Colors.deepPurple,
-                                            child: const Icon(Icons.gps_fixed, color: Colors.white),
+                                            child: const Icon(Icons.gps_fixed,
+                                                color: Colors.white),
                                           ),
                                         ),
                                         Positioned(
@@ -705,30 +787,40 @@ class _AddImageScreenState extends State<AddImageScreen>
                                             mini: true,
                                             backgroundColor: Colors.deepPurple,
                                             onPressed: () async {
-                                              final picked = await Navigator.push(
+                                              final picked =
+                                                  await Navigator.push(
                                                 context,
                                                 MaterialPageRoute(
-                                                  builder: (context) => MapPickerScreen(
-                                                    initialLocation: _pickedLocation ?? _initialMapCenter!,
+                                                  builder: (context) =>
+                                                      MapPickerScreen(
+                                                    initialLocation:
+                                                        _pickedLocation ??
+                                                            _initialMapCenter!,
                                                   ),
                                                 ),
                                               );
-                                              if (picked != null && picked is LatLng) {
+                                              if (picked != null &&
+                                                  picked is LatLng) {
                                                 setState(() {
                                                   _pickedLocation = picked;
                                                 });
                                                 // Animate camera to new picked location
                                                 if (_mapController != null) {
                                                   _mapController!.animateCamera(
-                                                    CameraUpdate.newCameraPosition(
-                                                      CameraPosition(target: picked, zoom: 15),
+                                                    CameraUpdate
+                                                        .newCameraPosition(
+                                                      CameraPosition(
+                                                          target: picked,
+                                                          zoom: 15),
                                                     ),
                                                   );
                                                 }
                                               }
                                             },
                                             tooltip: 'Open Full Map',
-                                            child: const Icon(Icons.open_in_full, color: Colors.white),
+                                            child: const Icon(
+                                                Icons.open_in_full,
+                                                color: Colors.white),
                                           ),
                                         ),
                                       ],
@@ -743,7 +835,10 @@ class _AddImageScreenState extends State<AddImageScreen>
                 padding: EdgeInsets.only(top: 6, left: 8, right: 8, bottom: 0),
                 child: Text(
                   'Tip: Tap on the map to add a pin.',
-                  style: TextStyle(fontSize: 12, color: Colors.deepPurple, fontStyle: FontStyle.italic),
+                  style: TextStyle(
+                      fontSize: 12,
+                      color: Colors.deepPurple,
+                      fontStyle: FontStyle.italic),
                   textAlign: TextAlign.left,
                 ),
               ),
@@ -769,9 +864,17 @@ class _AddImageScreenState extends State<AddImageScreen>
                             height: 56,
                             decoration: BoxDecoration(
                               borderRadius: BorderRadius.circular(10),
-                              border: Border.all(color: Colors.deepPurple.withAlpha((0.10*255).toInt())),
+                              border: Border.all(
+                                  color: Colors.deepPurple
+                                      .withAlpha((0.10 * 255).toInt())),
                               color: Colors.white,
-                              boxShadow: [BoxShadow(color: Colors.deepPurple.withAlpha((0.06*255).toInt()), blurRadius: 4, offset: const Offset(0,2))],
+                              boxShadow: [
+                                BoxShadow(
+                                    color: Colors.deepPurple
+                                        .withAlpha((0.06 * 255).toInt()),
+                                    blurRadius: 4,
+                                    offset: const Offset(0, 2))
+                              ],
                             ),
                             child: ClipRRect(
                               borderRadius: BorderRadius.circular(10),
@@ -790,7 +893,8 @@ class _AddImageScreenState extends State<AddImageScreen>
                                   color: Colors.white,
                                   shape: BoxShape.circle,
                                 ),
-                                child: const Icon(Icons.close, size: 14, color: Colors.red),
+                                child: const Icon(Icons.close,
+                                    size: 14, color: Colors.red),
                               ),
                             ),
                           ),
@@ -803,9 +907,12 @@ class _AddImageScreenState extends State<AddImageScreen>
                         width: 56,
                         height: 56,
                         decoration: BoxDecoration(
-                          color: Colors.deepPurple.withAlpha((0.07*255).toInt()),
+                          color:
+                              Colors.deepPurple.withAlpha((0.07 * 255).toInt()),
                           borderRadius: BorderRadius.circular(10),
-                          border: Border.all(color: Colors.deepPurple.withAlpha((0.10*255).toInt())),
+                          border: Border.all(
+                              color: Colors.deepPurple
+                                  .withAlpha((0.10 * 255).toInt())),
                         ),
                         child: const Icon(Icons.add, color: Colors.deepPurple),
                       ),
@@ -832,7 +939,10 @@ class _AddImageScreenState extends State<AddImageScreen>
                       : const Icon(Icons.send, color: Colors.white),
                   label: Text(
                     _isUploading ? 'Uploading...' : 'Submit',
-                    style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white),
+                    style: const TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white),
                   ),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.deepPurple,
@@ -841,7 +951,8 @@ class _AddImageScreenState extends State<AddImageScreen>
                       borderRadius: BorderRadius.circular(10),
                     ),
                     elevation: 4,
-                    shadowColor: Colors.deepPurple.withAlpha((0.15*255).toInt()),
+                    shadowColor:
+                        Colors.deepPurple.withAlpha((0.15 * 255).toInt()),
                   ),
                 ),
               ),
@@ -867,7 +978,11 @@ class _AddImageScreenState extends State<AddImageScreen>
             ),
           ),
           const SizedBox(width: 8),
-          Text(text, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Colors.deepPurple)),
+          Text(text,
+              style: const TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 16,
+                  color: Colors.deepPurple)),
         ],
       ),
     );
@@ -880,7 +995,12 @@ class GlassContainer extends StatelessWidget {
   final double blur;
   final Color color;
   final BorderRadius borderRadius;
-  const GlassContainer({super.key, required this.child, this.blur = 10, this.color = Colors.white24, this.borderRadius = BorderRadius.zero});
+  const GlassContainer(
+      {super.key,
+      required this.child,
+      this.blur = 10,
+      this.color = Colors.white24,
+      this.borderRadius = BorderRadius.zero});
 
   @override
   Widget build(BuildContext context) {

@@ -7,6 +7,7 @@ import 'dart:io';
 import 'report_details_screen.dart';
 import 'settings_screen.dart';
 import 'chat_list_screen.dart';
+import 'achievements_screen.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({Key? key}) : super(key: key);
@@ -144,8 +145,10 @@ class _ProfileScreenState extends State<ProfileScreen>
                       backgroundImage: profileImagePath != null &&
                               profileImagePath.isNotEmpty
                           ? (profileImagePath.startsWith('http')
-                              ? NetworkImage(profileImagePath) as ImageProvider<Object>
-                              : FileImage(File(profileImagePath)) as ImageProvider<Object>)
+                              ? NetworkImage(profileImagePath)
+                                  as ImageProvider<Object>
+                              : FileImage(File(profileImagePath))
+                                  as ImageProvider<Object>)
                           : null,
                       child:
                           profileImagePath == null || profileImagePath.isEmpty
@@ -180,27 +183,57 @@ class _ProfileScreenState extends State<ProfileScreen>
                   ],
                 ),
                 const SizedBox(height: 24),
-                Center(
-                  child: ElevatedButton.icon(
-                    icon: const Icon(Icons.chat_bubble_outline),
-                    label: const Text('Messages'),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.deepPurple,
-                      foregroundColor: Colors.white,
-                      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Expanded(
+                      child: ElevatedButton.icon(
+                        icon: const Icon(Icons.chat_bubble_outline),
+                        label: const Text('Messages'),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.deepPurple,
+                          foregroundColor: Colors.white,
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 24, vertical: 12),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                        ),
+                        onPressed: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => ChatListScreen(),
+                            ),
+                          );
+                        },
                       ),
                     ),
-                    onPressed: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => ChatListScreen(),
+                    const SizedBox(width: 16),
+                    Expanded(
+                      child: ElevatedButton.icon(
+                        icon: const Icon(Icons.emoji_events),
+                        label: const Text('Achievement'),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color(0xFF03DAC6),
+                          foregroundColor: Colors.white,
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 24, vertical: 12),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
                         ),
-                      );
-                    },
-                  ),
+                        onPressed: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => const AchievementsScreen(),
+                            ),
+                          );
+                        },
+                      ),
+                    ),
+                  ],
                 ),
                 const SizedBox(height: 32),
                 // Reports Section with Tabs
@@ -361,8 +394,7 @@ class _ProfileScreenState extends State<ProfileScreen>
                                     child: Text(
                                       '${report.location.latitude.toStringAsFixed(4)}, ${report.location.longitude.toStringAsFixed(4)}',
                                       style: TextStyle(
-                                        color:
-                                            Colors.deepPurple.withAlpha(170),
+                                        color: Colors.deepPurple.withAlpha(170),
                                         fontSize: 12,
                                       ),
                                     ),

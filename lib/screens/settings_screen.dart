@@ -131,27 +131,25 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       backgroundImage: profileImagePath != null &&
                               profileImagePath.isNotEmpty
                           ? (profileImagePath.startsWith('http')
-                              ? NetworkImage(profileImagePath) as ImageProvider<Object>
-                              : FileImage(File(profileImagePath)) as ImageProvider<Object>)
+                              ? NetworkImage(profileImagePath)
+                                  as ImageProvider<Object>
+                              : FileImage(File(profileImagePath))
+                                  as ImageProvider<Object>)
                           : null,
-                      child: profileImagePath == null ||
-                              profileImagePath.isEmpty
-                          ? const Icon(Icons.person,
-                              color: Colors.deepPurple, size: 40)
-                          : null,
+                      child:
+                          profileImagePath == null || profileImagePath.isEmpty
+                              ? const Icon(Icons.person,
+                                  color: Colors.deepPurple, size: 40)
+                              : null,
                     ),
                     Positioned(
                       right: 0,
                       bottom: 0,
                       child: Container(
                         padding: const EdgeInsets.all(4),
-                        decoration: BoxDecoration(
+                        decoration: const BoxDecoration(
                           color: Colors.deepPurple,
                           shape: BoxShape.circle,
-                          border: Border.all(
-                            color: Colors.white,
-                            width: 2,
-                          ),
                         ),
                         child: const Icon(
                           Icons.camera_alt,
@@ -164,13 +162,33 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 ),
               ),
               const SizedBox(width: 16),
-              if (profileImagePath != null &&
-                  profileImagePath.isNotEmpty)
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      'Profile Picture',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                        color: Colors.deepPurple,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      'Tap to change or remove',
+                      style: TextStyle(
+                        fontSize: 14,
+                        color: Colors.deepPurple.withAlpha(179),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              if (profileImagePath != null && profileImagePath.isNotEmpty)
                 IconButton(
-                  icon: const Icon(Icons.delete_outline,
-                      color: Colors.deepPurple),
                   onPressed: _deleteProfilePicture,
-                  tooltip: 'Delete profile picture',
+                  icon: const Icon(Icons.delete, color: Colors.red),
                 ),
             ],
           ),
@@ -228,29 +246,27 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         ),
                       ),
               ),
-              if (!_isEditingUsername)
-                IconButton(
-                  icon: const Icon(Icons.edit,
-                      color: Colors.deepPurple),
-                  onPressed: () {
+              IconButton(
+                onPressed: () async {
+                  if (_isEditingUsername) {
+                    if (_usernameController.text.trim().isNotEmpty) {
+                      await authService
+                          .updateUsername(_usernameController.text.trim());
+                      setState(() {
+                        _isEditingUsername = false;
+                      });
+                    }
+                  } else {
                     setState(() {
                       _isEditingUsername = true;
                     });
-                  },
-                )
-              else
-                IconButton(
-                  icon: const Icon(Icons.check,
-                      color: Colors.deepPurple),
-                  onPressed: () async {
-                    await authService.updateUsername(_usernameController.text);
-                    await _loadUserData();
-                                      setState(() {
-                      _usernameController.text = _usernameController.text;
-                      _isEditingUsername = false;
-                    });
-                  },
+                  }
+                },
+                icon: Icon(
+                  _isEditingUsername ? Icons.check : Icons.edit,
+                  color: Colors.deepPurple.withAlpha(179),
                 ),
+              ),
             ],
           ),
         ],
@@ -285,99 +301,124 @@ class _SettingsScreenState extends State<SettingsScreen> {
               Icons.phone,
               color: Colors.deepPurple.withAlpha(179),
             ),
-            title: _isEditingPhone
+            title: const Text(
+              'Phone Number',
+              style: TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.w600,
+                color: Colors.deepPurple,
+              ),
+            ),
+            subtitle: _isEditingPhone
                 ? TextField(
                     controller: _phoneController,
                     keyboardType: TextInputType.phone,
-                    decoration: const InputDecoration(
-                      hintText: 'Enter 10-digit phone number',
+                    style: const TextStyle(
+                      fontSize: 16,
+                      color: Colors.deepPurple,
+                    ),
+                    decoration: InputDecoration(
                       border: InputBorder.none,
-                      counterText: '',
                       isDense: true,
-                      contentPadding: EdgeInsets.symmetric(vertical: 8, horizontal: 8),
+                      contentPadding: EdgeInsets.zero,
+                      errorText: _phoneErrorText,
                     ),
                     onChanged: (value) {
                       setState(() {
-                        _phoneNumber = value;
-                        _isPhoneValid = RegExp(r'^[6-9]\d{9}$').hasMatch(value);
-                        _phoneErrorText = _isPhoneValid ? null : 'Enter a valid 10-digit Indian phone number';
+                        _phoneErrorText = null;
+                        _isPhoneValid = true;
                       });
                     },
-                    maxLength: 10,
-                    style: const TextStyle(fontSize: 16),
                   )
                 : Text(
-                    authService.phoneNumber ?? 'No phone number',
+                    _phoneNumber ?? 'Not set',
                     style: TextStyle(
                       color: Colors.deepPurple.withAlpha(179),
                       fontSize: 16,
-                      fontWeight: FontWeight.w500,
                     ),
                   ),
-            trailing: _isEditingPhone
-                ? Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      IconButton(
-                        icon: const Icon(Icons.check, color: Colors.green),
-                        onPressed: _isPhoneValid
-                            ? () async {
-                                if (_phoneController.text.isNotEmpty) {
-                                  await authService.updatePhoneNumber(_phoneController.text);
-                                  await _loadUserData();
-                                  setState(() {
-                                    _isEditingPhone = false;
-                                    _phoneNumber = _phoneController.text;
-                                  });
-                                }
-                              }
-                            : null,
-                      ),
-                      IconButton(
-                        icon: const Icon(Icons.close, color: Colors.red),
-                        onPressed: () {
-                          setState(() {
-                            _isEditingPhone = false;
-                            _phoneController.text = _phoneNumber ?? '';
-                            _isPhoneValid = true;
-                            _phoneErrorText = null;
-                          });
-                        },
-                      ),
-                    ],
-                  )
-                : IconButton(
-                    icon: const Icon(Icons.edit, color: Colors.deepPurple),
-                    onPressed: () {
+            trailing: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                if (_isPhoneVisible)
+                  Icon(
+                    Icons.visibility,
+                    color: Colors.deepPurple.withAlpha(179),
+                    size: 20,
+                  ),
+                const SizedBox(width: 8),
+                IconButton(
+                  onPressed: () async {
+                    if (_isEditingPhone) {
+                      final phoneNumber = _phoneController.text.trim();
+                      if (phoneNumber.isEmpty) {
+                        setState(() {
+                          _phoneErrorText = 'Phone number cannot be empty';
+                          _isPhoneValid = false;
+                        });
+                        return;
+                      }
+
+                      // Validate Indian phone number
+                      String digits = phoneNumber.replaceAll(RegExp(r'\D'), '');
+                      if (digits.startsWith('91') && digits.length == 12) {
+                        digits = digits.substring(2);
+                      } else if (digits.startsWith('0') &&
+                          digits.length == 11) {
+                        digits = digits.substring(1);
+                      }
+
+                      if (!RegExp(r'^[6-9]\d{9}').hasMatch(digits)) {
+                        setState(() {
+                          _phoneErrorText =
+                              'Please enter a valid Indian phone number';
+                          _isPhoneValid = false;
+                        });
+                        return;
+                      }
+
+                      await authService.updatePhoneNumber(digits);
                       setState(() {
-                        _isEditingPhone = true;
-                        _phoneController.text = _phoneNumber ?? '';
+                        _phoneNumber = digits;
+                        _isEditingPhone = false;
                         _isPhoneValid = true;
                         _phoneErrorText = null;
                       });
-                    },
+                    } else {
+                      setState(() {
+                        _isEditingPhone = true;
+                        _phoneController.text = _phoneNumber ?? '';
+                      });
+                    }
+                  },
+                  icon: Icon(
+                    _isEditingPhone ? Icons.check : Icons.edit,
+                    color: Colors.deepPurple.withAlpha(179),
                   ),
-          ),
-          if (!_isEditingPhone && _phoneErrorText != null)
-            Padding(
-              padding: const EdgeInsets.only(top: 4, left: 8, right: 8),
-              child: Text(
-                _phoneErrorText!,
-                style: const TextStyle(color: Colors.red, fontSize: 13),
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
-              ),
+                ),
+              ],
             ),
+          ),
           if (!_isEditingPhone)
-            SwitchListTile(
-              title: const Text('Show phone number to others'),
-              value: _isPhoneVisible,
-              onChanged: (value) async {
-                setState(() {
-                  _isPhoneVisible = value;
-                });
-                await authService.togglePhoneNumberVisibility(value);
-              },
+            ListTile(
+              leading: const SizedBox.shrink(),
+              title: const Text(
+                'Show Phone Number',
+                style: TextStyle(
+                  fontSize: 14,
+                  color: Colors.deepPurple,
+                ),
+              ),
+              trailing: Switch(
+                value: _isPhoneVisible,
+                onChanged: (value) async {
+                  await authService.togglePhoneNumberVisibility(value);
+                  setState(() {
+                    _isPhoneVisible = value;
+                  });
+                },
+                activeColor: Colors.deepPurple,
+              ),
             ),
         ],
       ),
@@ -443,4 +484,4 @@ class _SettingsScreenState extends State<SettingsScreen> {
       ),
     );
   }
-} 
+}

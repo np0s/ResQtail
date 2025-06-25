@@ -5,13 +5,13 @@ import 'services/auth_service.dart';
 import 'services/email_service.dart';
 import 'services/config_service.dart';
 import 'services/report_service.dart';
+import 'services/points_service.dart';
 import 'screens/login_screen.dart';
 import 'screens/register_screen.dart';
 import 'screens/verification_screen.dart';
 import 'screens/home_screen.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'firebase_options.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -40,6 +40,17 @@ void main() async {
         ),
         ChangeNotifierProvider(
           create: (_) => ReportService(),
+        ),
+        ChangeNotifierProvider(
+          create: (context) {
+            final pointsService = PointsService();
+            // Connect ReportService with PointsService
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              final reportService = context.read<ReportService>();
+              reportService.setPointsService(pointsService);
+            });
+            return pointsService;
+          },
         ),
       ],
       child: const MyApp(),
