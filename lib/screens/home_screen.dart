@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import 'map_screen.dart'; // Import the MapScreen
-import 'profile_screen.dart'; // Import the ProfileScreen
-import 'add_image_screen.dart'; // Import the AddImageScreen
+import 'map_screen.dart'; 
+import 'profile_screen.dart'; 
+import 'add_image_screen.dart'; 
 import 'package:provider/provider.dart';
 import '../services/auth_service.dart';
 import 'dart:io';
@@ -20,7 +20,7 @@ class _HomeScreenState extends State<HomeScreen>
   late Animation<Color?> _colorAnimation;
 
   final List<Widget> _screens = [
-    const AddImageScreen(), // Use the standalone AddImageScreen
+    const AddImageScreen(),
     const MapScreen(),
     const ProfileScreen(),
   ];

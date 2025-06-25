@@ -6,11 +6,13 @@ import '../models/report.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:http/http.dart' as http;
 import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:snowflaker/snowflaker.dart';
 
 class ReportService extends ChangeNotifier {
   static const String _reportsFileName = 'reports.json';
   List<Report> _reports = [];
   final _firestore = FirebaseFirestore.instance;
+  final Snowflaker _snowflaker = Snowflaker(workerId: 1, datacenterId: 1);
 
   List<Report> get reports =>
       _reports.where((report) => !report.isHelped).toList();
@@ -91,8 +93,9 @@ class ReportService extends ChangeNotifier {
     try {
       // Upload images to Zipline and get URLs
       final imageUrls = await _uploadReportImagesZipline(report.imagePaths);
+      final reportId = report.id.isEmpty ? _snowflaker.nextId().toString() : report.id;
       final reportWithUrls = Report(
-        id: report.id,
+        id: reportId,
         userId: report.userId,
         imagePaths: imageUrls,
         description: report.description,
@@ -105,7 +108,7 @@ class ReportService extends ChangeNotifier {
         phoneNumber: report.phoneNumber,
         showPhoneNumber: report.showPhoneNumber,
       );
-      await _firestore.collection('reports').doc(report.id).set(reportWithUrls.toJson());
+      await _firestore.collection('reports').doc(reportId).set(reportWithUrls.toJson());
       _reports.add(reportWithUrls);
       notifyListeners();
     } catch (e) {

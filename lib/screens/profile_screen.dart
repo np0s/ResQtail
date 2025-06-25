@@ -6,6 +6,7 @@ import '../models/report.dart';
 import 'dart:io';
 import 'report_details_screen.dart';
 import 'settings_screen.dart';
+import 'chat_list_screen.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({Key? key}) : super(key: key);
@@ -177,6 +178,29 @@ class _ProfileScreenState extends State<ProfileScreen>
                       ),
                     ),
                   ],
+                ),
+                const SizedBox(height: 24),
+                Center(
+                  child: ElevatedButton.icon(
+                    icon: const Icon(Icons.chat_bubble_outline),
+                    label: const Text('Messages'),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.deepPurple,
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
+                    onPressed: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => ChatListScreen(),
+                        ),
+                      );
+                    },
+                  ),
                 ),
                 const SizedBox(height: 32),
                 // Reports Section with Tabs
