@@ -191,8 +191,10 @@ class _ProfileScreenState extends State<ProfileScreen>
                         icon: const Icon(Icons.chat_bubble_outline),
                         label: const Text('Messages'),
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.deepPurple,
+                          backgroundColor: Colors.deepPurpleAccent,
                           foregroundColor: Colors.white,
+                          elevation: 4,
+                          shadowColor: Colors.deepPurpleAccent.withOpacity(0.4),
                           padding: const EdgeInsets.symmetric(
                               horizontal: 24, vertical: 12),
                           shape: RoundedRectangleBorder(
@@ -215,8 +217,10 @@ class _ProfileScreenState extends State<ProfileScreen>
                         icon: const Icon(Icons.emoji_events),
                         label: const Text('Achievement'),
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: const Color(0xFF03DAC6),
+                          backgroundColor: Colors.deepPurpleAccent,
                           foregroundColor: Colors.white,
+                          elevation: 4,
+                          shadowColor: Colors.deepPurpleAccent.withOpacity(0.4),
                           padding: const EdgeInsets.symmetric(
                               horizontal: 24, vertical: 12),
                           shape: RoundedRectangleBorder(
@@ -297,6 +301,7 @@ class _ProfileScreenState extends State<ProfileScreen>
             ),
           )
         : ListView.builder(
+            padding: const EdgeInsets.only(bottom: 100),
             itemCount: reports.length,
             itemBuilder: (context, index) {
               final report = reports[index];

@@ -30,8 +30,8 @@ class PointsDisplay extends StatelessWidget {
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
           colors: [
-            Color(0xFFF3E5F5),
-            Color(0xFFE1BEE7),
+            Color(0xFFEEE6F7),
+            Color(0xFFD1B3F7),
           ],
         ),
         borderRadius: BorderRadius.circular(16),
@@ -81,7 +81,7 @@ class PointsDisplay extends StatelessWidget {
               color: Colors.white,
               borderRadius: BorderRadius.circular(12),
               border: Border.all(
-                color: const Color(0xFF6750A4).withOpacity(0.2),
+                color: Colors.deepPurple.withOpacity(0.15),
               ),
             ),
             child: Column(
@@ -105,7 +105,7 @@ class PointsDisplay extends StatelessWidget {
                       ),
                       decoration: BoxDecoration(
                         gradient: const LinearGradient(
-                          colors: [Color(0xFF7C4DFF), Color(0xFF9575CD)],
+                          colors: [Colors.deepPurple, Colors.deepPurpleAccent],
                         ),
                         borderRadius: BorderRadius.circular(20),
                       ),
@@ -130,7 +130,7 @@ class PointsDisplay extends StatelessWidget {
                         'Reports',
                         '${userPoints!.reportsSubmitted}',
                         Icons.description,
-                        const Color(0xFF6750A4),
+                        Colors.deepPurple,
                       ),
                     ),
                     const SizedBox(width: 12),
@@ -139,7 +139,7 @@ class PointsDisplay extends StatelessWidget {
                         'Helped',
                         '${userPoints!.reportsHelped}',
                         Icons.favorite,
-                        const Color(0xFF03DAC6),
+                        Colors.deepPurpleAccent,
                       ),
                     ),
                   ],
@@ -167,7 +167,7 @@ class PointsDisplay extends StatelessWidget {
                 color: Colors.white,
                 borderRadius: BorderRadius.circular(12),
                 border: Border.all(
-                  color: const Color(0xFF6750A4).withOpacity(0.2),
+                  color: Colors.deepPurple.withOpacity(0.15),
                 ),
               ),
               child: Column(
@@ -347,7 +347,7 @@ class PointsDisplay extends StatelessWidget {
                 color: Colors.white,
                 borderRadius: BorderRadius.circular(12),
                 border: Border.all(
-                  color: const Color(0xFF6750A4).withOpacity(0.2),
+                  color: Colors.deepPurple.withOpacity(0.15),
                 ),
               ),
               child: Column(
