@@ -95,6 +95,34 @@ class PointsService extends ChangeNotifier {
     return PointsConfig.pointsPerHelp;
   }
 
+  Future<int> deductPointsForReport(String userId) async {
+    if (_currentUserPoints?.userId != userId) {
+      await loadUserPoints(userId);
+    }
+
+    if (_currentUserPoints == null) return 0;
+
+    final newReportsSubmitted = (_currentUserPoints!.reportsSubmitted - 1)
+        .clamp(0, double.infinity)
+        .toInt();
+    final newTotalPoints =
+        (_currentUserPoints!.totalPoints - PointsConfig.pointsPerReport)
+            .clamp(0, double.infinity)
+            .toInt();
+
+    _currentUserPoints = _currentUserPoints!.copyWith(
+      reportsSubmitted: newReportsSubmitted,
+      totalPoints: newTotalPoints,
+      lastUpdated: DateTime.now(),
+    );
+
+    await _saveUserPoints();
+    await _checkAndAwardBadges();
+    notifyListeners();
+
+    return PointsConfig.pointsPerReport;
+  }
+
   Future<void> _checkAndAwardBadges() async {
     if (_currentUserPoints == null) return;
 

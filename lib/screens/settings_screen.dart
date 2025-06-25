@@ -166,15 +166,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text(
-                      'Profile Picture',
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w600,
-                        color: Colors.deepPurple,
-                      ),
-                    ),
-                    const SizedBox(height: 4),
                     Text(
                       'Tap to change or remove',
                       style: TextStyle(

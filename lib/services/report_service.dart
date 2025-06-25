@@ -141,8 +141,22 @@ class ReportService extends ChangeNotifier {
 
   Future<void> deleteReport(String reportId) async {
     try {
+      // Find the report before deleting
+      Report? report;
+      for (final r in _reports) {
+        if (r.id == reportId) {
+          report = r;
+          break;
+        }
+      }
+      String? userId = report?.userId;
+
       await _firestore.collection('reports').doc(reportId).delete();
       _reports.removeWhere((report) => report.id == reportId);
+      // Deduct points if possible
+      if (_pointsService != null && userId != null) {
+        await _pointsService!.deductPointsForReport(userId);
+      }
       notifyListeners();
     } catch (e) {
       debugPrint('Error deleting report from Firestore: $e');
