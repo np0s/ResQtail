@@ -7,17 +7,23 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:http/http.dart' as http;
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:snowflaker/snowflaker.dart';
+import 'points_service.dart';
 
 class ReportService extends ChangeNotifier {
   static const String _reportsFileName = 'reports.json';
   List<Report> _reports = [];
   final _firestore = FirebaseFirestore.instance;
   final Snowflaker _snowflaker = Snowflaker(workerId: 1, datacenterId: 1);
+  PointsService? _pointsService;
 
   List<Report> get reports =>
       _reports.where((report) => !report.isHelped).toList();
   List<Report> getUserReports(String userId) {
     return _reports.where((report) => report.userId == userId).toList();
+  }
+
+  void setPointsService(PointsService pointsService) {
+    _pointsService = pointsService;
   }
 
   Future<String> get _reportsFilePath async {
@@ -29,7 +35,8 @@ class ReportService extends ChangeNotifier {
     try {
       // Load from Firestore (all reports)
       final snapshot = await _firestore.collection('reports').get();
-      _reports = snapshot.docs.map((doc) => Report.fromJson(doc.data())).toList();
+      _reports =
+          snapshot.docs.map((doc) => Report.fromJson(doc.data())).toList();
       notifyListeners();
     } catch (e) {
       debugPrint('Error loading reports from Firestore: $e');
@@ -58,7 +65,8 @@ class ReportService extends ChangeNotifier {
     }
   }
 
-  Future<List<String>> _uploadReportImagesZipline(List<String> imagePaths) async {
+  Future<List<String>> _uploadReportImagesZipline(
+      List<String> imagePaths) async {
     const ziplineUrl = 'https://share.p1ng.me/api/upload';
     final apiKey = dotenv.env['ZIPLINE_API_KEY'];
     if (apiKey == null || apiKey.isEmpty) {
@@ -76,7 +84,8 @@ class ReportService extends ChangeNotifier {
       var response = await request.send();
       if (response.statusCode == 200) {
         final respStr = await response.stream.bytesToString();
-        final url = RegExp(r'"url"\s*:\s*"([^"]+)"').firstMatch(respStr)?.group(1);
+        final url =
+            RegExp(r'"url"\s*:\s*"([^"]+)"').firstMatch(respStr)?.group(1);
         if (url != null) {
           downloadUrls.add(url);
         } else {
@@ -93,7 +102,8 @@ class ReportService extends ChangeNotifier {
     try {
       // Upload images to Zipline and get URLs
       final imageUrls = await _uploadReportImagesZipline(report.imagePaths);
-      final reportId = report.id.isEmpty ? _snowflaker.nextId().toString() : report.id;
+      final reportId =
+          report.id.isEmpty ? _snowflaker.nextId().toString() : report.id;
       final reportWithUrls = Report(
         id: reportId,
         userId: report.userId,
@@ -108,8 +118,17 @@ class ReportService extends ChangeNotifier {
         phoneNumber: report.phoneNumber,
         showPhoneNumber: report.showPhoneNumber,
       );
-      await _firestore.collection('reports').doc(reportId).set(reportWithUrls.toJson());
+      await _firestore
+          .collection('reports')
+          .doc(reportId)
+          .set(reportWithUrls.toJson());
       _reports.add(reportWithUrls);
+
+      // Add points for the report
+      if (_pointsService != null) {
+        await _pointsService!.addPointsForReport(report.userId);
+      }
+
       notifyListeners();
     } catch (e) {
       debugPrint('Error adding report to Firestore: $e');
@@ -122,8 +141,22 @@ class ReportService extends ChangeNotifier {
 
   Future<void> deleteReport(String reportId) async {
     try {
+      // Find the report before deleting
+      Report? report;
+      for (final r in _reports) {
+        if (r.id == reportId) {
+          report = r;
+          break;
+        }
+      }
+      String? userId = report?.userId;
+
       await _firestore.collection('reports').doc(reportId).delete();
       _reports.removeWhere((report) => report.id == reportId);
+      // Deduct points if possible
+      if (_pointsService != null && userId != null) {
+        await _pointsService!.deductPointsForReport(userId);
+      }
       notifyListeners();
     } catch (e) {
       debugPrint('Error deleting report from Firestore: $e');
@@ -152,8 +185,17 @@ class ReportService extends ChangeNotifier {
         showPhoneNumber: report.showPhoneNumber,
       );
       try {
-        await _firestore.collection('reports').doc(reportId).update({'isHelped': true});
+        await _firestore
+            .collection('reports')
+            .doc(reportId)
+            .update({'isHelped': true});
         _reports[index] = updatedReport;
+
+        // Add points for helping
+        if (_pointsService != null) {
+          await _pointsService!.addPointsForHelp(report.userId);
+        }
+
         notifyListeners();
       } catch (e) {
         debugPrint('Error updating report in Firestore: $e');
