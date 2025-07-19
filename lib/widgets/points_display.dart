@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../models/user_points.dart';
+import 'dart:ui';
 
 class PointsDisplay extends StatelessWidget {
   final UserPoints? userPoints;
@@ -327,6 +328,43 @@ class PointsDisplay extends StatelessWidget {
                 ],
               ),
             ),
+
+          // Certificates Section
+          const SizedBox(height: 32),
+          const Text(
+            'Certificates',
+            style: TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.bold,
+              color: Color(0xFF6750A4),
+            ),
+          ),
+          const SizedBox(height: 12),
+          Center(
+            child: Stack(
+              alignment: Alignment.center,
+              children: [
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(16),
+                  child: ImageFiltered(
+                    imageFilter: ImageFilter.blur(sigmaX: 6, sigmaY: 6),
+                    child: Image.asset(
+                      'assets/certificate_sample.png',
+                      width: 220,
+                      height: 140,
+                      fit: BoxFit.cover,
+                    ),
+                  ),
+                ),
+                const Icon(
+                  Icons.lock,
+                  size: 48,
+                  color: Colors.white,
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 16),
 
           // Unearned Badges Section
           const SizedBox(height: 20),

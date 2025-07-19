@@ -302,4 +302,21 @@ class PointsService extends ChangeNotifier {
       return null;
     }
   }
+
+  /// Fetch all users' points for leaderboard, sorted by totalPoints descending
+  Future<List<UserPoints>> getLeaderboard() async {
+    try {
+      final snapshot = await _firestore
+          .collection('userPoints')
+          .orderBy('totalPoints', descending: true)
+          .limit(100)
+          .get();
+      return snapshot.docs
+          .map((doc) => UserPoints.fromJson(doc.data()))
+          .toList();
+    } catch (e) {
+      debugPrint('Error fetching leaderboard: $e');
+      return [];
+    }
+  }
 }
